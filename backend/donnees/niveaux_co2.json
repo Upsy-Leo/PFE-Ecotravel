@@ -1,0 +1,12 @@
+{
+  "statut": "à valider",
+  "unite": "g CO2e par passager·km",
+  "regle": "La liste se lit dans l'ordre. Le niveau retenu est le premier dont l'intensité est strictement inférieure à « en_dessous_de ». Le dernier niveau (null) prend tout le reste. Une valeur pile sur un seuil passe donc au niveau le plus émetteur (10 donne B, 200 donne E).",
+  "niveaux": [
+    { "lettre": "A", "en_dessous_de": 10 },
+    { "lettre": "B", "en_dessous_de": 50 },
+    { "lettre": "C", "en_dessous_de": 120 },
+    { "lettre": "D", "en_dessous_de": 200 },
+    { "lettre": "E", "en_dessous_de": null }
+  ]
+}

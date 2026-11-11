@@ -1,0 +1,72 @@
+{
+  "statut": "à valider",
+  "unite": "g CO2e par passager·km",
+  "avertissement": "Valeurs PROVISOIRES. Elles servent à faire tourner le moteur et ses tests. Elles doivent être vérifiées dans la Base Empreinte ADEME et validées par l'équipe avant d'être affichées comme définitives. Quand un facteur est validé, passer son « statut » à « validé ».",
+  "releve": {
+    "source": "API Impact CO2 (ADEME)",
+    "url": "https://impactco2.fr/api/v1/transport",
+    "date": "2026-11-10",
+    "reglages": "Sans la construction des véhicules (includeConstruction=0, réglage par défaut de l'API), une personne par véhicule.",
+    "fourchettes": "Les bornes min et max viennent des ordres de grandeur ADEME cités dans le Portfolio (partie 1.3.2), sauf pour le bus (voir sa note)."
+  },
+  "modes": {
+    "avion": {
+      "tranches": [
+        { "jusqu_a_km": 1000, "facteur_g_pkm": 224.2, "libelle": "Avion trajet court" },
+        { "jusqu_a_km": 2000, "facteur_g_pkm": 184.3, "libelle": "Avion trajet moyen" },
+        { "jusqu_a_km": 5000, "facteur_g_pkm": 166.5, "libelle": "Avion trajet moyen à long" },
+        { "jusqu_a_km": null, "facteur_g_pkm": 177.6, "libelle": "Avion trajet long" }
+      ],
+      "min_g_pkm": 145,
+      "max_g_pkm": 290,
+      "source": "Impact CO2 (ADEME), relevé du 2026-11-10",
+      "statut": "à valider",
+      "a_verifier": [
+        "Ces facteurs incluent-ils les traînées de condensation ? Le projet prévoit de les exclure : à vérifier dans la Base Empreinte.",
+        "Le facteur change d'un coup à 1 000, 2 000 et 5 000 km : un vol de 1 001 km ressort avec moins de CO2 qu'un vol de 1 000 km. C'est un effet connu des facteurs par tranche.",
+        "Fourchette 145 à 290 : ordre de grandeur du Portfolio, pas une incertitude officielle ADEME."
+      ]
+    },
+    "train": {
+      "tranches": [
+        { "jusqu_a_km": null, "facteur_g_pkm": 2.3, "libelle": "TGV" }
+      ],
+      "min_g_pkm": 2,
+      "max_g_pkm": 30,
+      "source": "Impact CO2 (ADEME), relevé du 2026-11-10",
+      "statut": "à valider",
+      "a_verifier": [
+        "Valeur centrale = TGV. Les autres trains émettent plus (relevé du même jour : Intercités 5,8 ; TER 22,9). La fourchette 2 à 30 couvre du TGV au TER.",
+        "Faut-il distinguer TGV, Intercités et TER dans l'outil ? À trancher en équipe.",
+        "Facteurs valables pour la France (électricité peu carbonée). Un train à l'étranger peut émettre nettement plus."
+      ]
+    },
+    "bus": {
+      "tranches": [
+        { "jusqu_a_km": null, "facteur_g_pkm": 33.1, "libelle": "Autocar thermique" }
+      ],
+      "min_g_pkm": 33.1,
+      "max_g_pkm": 37.6,
+      "source": "Impact CO2 (ADEME), relevé du 2026-11-10",
+      "statut": "à valider",
+      "a_verifier": [
+        "Le Portfolio ne donne pas d'ordre de grandeur pour le bus. La fourchette est donc faute de mieux l'écart entre « sans construction » (33,1) et « avec construction » (37,6) : c'est un choix de périmètre, pas une vraie incertitude.",
+        "Il s'agit de l'autocar longue distance, pas du bus urbain (113,5 dans le même relevé)."
+      ]
+    },
+    "voiture": {
+      "tranches": [
+        { "jusqu_a_km": null, "facteur_g_pkm": 110.6, "libelle": "Voiture thermique, une personne à bord" }
+      ],
+      "min_g_pkm": 100,
+      "max_g_pkm": 220,
+      "source": "Impact CO2 (ADEME), relevé du 2026-11-10",
+      "statut": "à valider",
+      "a_verifier": [
+        "Valeur pour UNE personne dans la voiture. À deux, le CO2 par passager est divisé par deux (55,3). Le nombre de passagers n'est pas encore pris en compte par le moteur.",
+        "Avec la construction du véhicule, le même relevé donne 142,3.",
+        "Voiture thermique uniquement (électrique : 12,1 dans le même relevé)."
+      ]
+    }
+  }
+}
