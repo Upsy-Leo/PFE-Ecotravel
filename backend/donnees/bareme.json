@@ -1,0 +1,30 @@
+{
+  "statut": "à valider",
+  "avertissement": "Valeurs PROVISOIRES, utilisées seulement quand une source ne répond pas et qu'il n'y a rien en cache. Elles sont calées sur UN SEUL trajet (Paris-Lyon, relevé du 2026-11-12) : à vérifier sur les trajets de référence avant de s'y fier.",
+  "methode": "distance estimée = distance à vol d'oiseau × coefficient_detour ; durée estimée = distance estimée ÷ vitesse_km_h (vitesse moyenne de porte à porte).",
+  "releve_paris_lyon": {
+    "vol_d_oiseau_km": 392,
+    "voiture": "OpenRouteService : 465 km en 4 h 33",
+    "train": "Transitous : 2 h 20 de centre à centre (TGV + métro). Distance par le rail d'environ 430 km : chiffre non vérifié.",
+    "bus": "Transitous : 6 h 28 de centre à centre (car longue distance + métro). Distance par la route supposée égale à celle de la voiture."
+  },
+  "modes": {
+    "voiture": { "coefficient_detour": 1.2, "vitesse_km_h": 100 },
+    "train": { "coefficient_detour": 1.1, "vitesse_km_h": 185 },
+    "bus": { "coefficient_detour": 1.2, "vitesse_km_h": 70 },
+    "avion": { "vitesse_km_h": 880, "temps_decollage_atterrissage_min": 40, "temps_aeroport_min": 150 }
+  },
+  "duree_avion": {
+    "methode": "durée = temps_aeroport_min + temps_decollage_atterrissage_min + distance ÷ vitesse_km_h × 60. La distance est celle à vol d'oiseau entre les deux aéroports.",
+    "hypotheses": [
+      "Vol direct : une escale n'est pas comptée.",
+      "Temps de vol = une part fixe (roulage, montée, descente : 40 min) + la distance à 880 km/h. Ces deux chiffres sont calés sur DEUX durées de vol citées de mémoire, NON VÉRIFIÉES : Paris-Nice (690 km) en 1 h 30 environ et Paris-Bangkok (9 450 km) en 11 h 20 environ.",
+      "Temps d'aéroport = 150 min : arriver 2 h avant le départ, puis 30 min pour sortir à l'arrivée. NON VÉRIFIÉ, c'est une convention à choisir en équipe (un vol intérieur demande moins, un long-courrier souvent plus).",
+      "Le trajet entre la ville et l'aéroport n'est pas compté, alors que les durées en train et en bus vont de centre à centre : cela avantage l'avion."
+    ]
+  },
+  "a_verifier": [
+    "La vitesse du train (185 km/h) vient d'une ligne à grande vitesse : elle est trop optimiste pour un train classique.",
+    "Le barème ne sait pas si le trajet existe vraiment (pas de route ou de train entre deux continents)."
+  ]
+}

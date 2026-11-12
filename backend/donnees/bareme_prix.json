@@ -1,0 +1,52 @@
+{
+  "statut": "à valider",
+  "avertissement": "Prix INDICATIFS et PROVISOIRES, en euros par km et par voyageur, aller simple. Ils donnent un ordre de grandeur, pas un tarif : toujours afficher la fourchette, jamais une valeur unique. Chaque mode précise d'où viennent ses chiffres et ce qui n'a pas été vérifié.",
+  "methode": "prix minimum = distance × prix_min_eur_km ; prix maximum = distance × prix_max_eur_km, arrondis à l'euro. Comme pour les facteurs d'émission, un mode peut avoir plusieurs tranches de distance.",
+  "releve_le": "2026-11-12",
+  "modes": {
+    "voiture": {
+      "tranches": [
+        { "jusqu_a_km": null, "prix_min_eur_km": 0.10, "prix_max_eur_km": 0.28 }
+      ],
+      "hypotheses": [
+        "Une seule personne dans la voiture (comme pour le facteur d'émission) : elle paie tout.",
+        "Seuls le carburant et les péages sont comptés. Ni usure, ni assurance, ni stationnement, ni location.",
+        "Carburant : 2,00 à 2,20 €/L. RELEVÉ le 2026-11-12 (moyenne nationale E10, SP95 et gazole, données ouvertes prix-carburants, data.economie.gouv.fr).",
+        "Consommation : 5 à 8 L/100 km. NON VÉRIFIÉ, ordre de grandeur.",
+        "Péages : de 0 (route sans péage) à 0,10 €/km (autoroute). NON VÉRIFIÉ, ordre de grandeur.",
+        "Minimum = 5 L × 2,00 € ÷ 100 = 0,10 €/km. Maximum = 8 L × 2,20 € ÷ 100 + 0,10 = 0,28 €/km."
+      ]
+    },
+    "train": {
+      "tranches": [
+        { "jusqu_a_km": null, "prix_min_eur_km": 0.04, "prix_max_eur_km": 0.27 }
+      ],
+      "hypotheses": [
+        "Sert seulement quand le trajet n'est pas dans le fichier des tarifs SNCF (tarifs_sncf.csv).",
+        "Calé sur UN SEUL trajet : Paris-Lyon, 16 à 115 € en 2de classe plein tarif (fichier SNCF), pour 433 km estimés.",
+        "C'est un tarif de train à grande vitesse en France : rien ne dit qu'il vaut pour un train régional ou à l'étranger."
+      ]
+    },
+    "bus": {
+      "tranches": [
+        { "jusqu_a_km": null, "prix_min_eur_km": 0.02, "prix_max_eur_km": 0.08 }
+      ],
+      "hypotheses": [
+        "NON VÉRIFIÉ : ordre de grandeur des cars longue distance en France, sans relevé. À remplacer par des prix relevés sur les trajets de référence."
+      ]
+    },
+    "avion": {
+      "tranches": [
+        { "jusqu_a_km": 1000, "prix_min_eur_km": 0.06, "prix_max_eur_km": 0.30 },
+        { "jusqu_a_km": 5000, "prix_min_eur_km": 0.04, "prix_max_eur_km": 0.15 },
+        { "jusqu_a_km": null, "prix_min_eur_km": 0.03, "prix_max_eur_km": 0.10 }
+      ],
+      "hypotheses": [
+        "NON VÉRIFIÉ : ordres de grandeur sans relevé. C'est le barème le plus fragile, le prix d'un vol dépend surtout de la date et de l'avance de réservation, peu de la distance.",
+        "Classe économique, aller simple, vol direct, sans bagage en soute ni trajet vers l'aéroport.",
+        "Trois tranches, car le prix au km baisse quand le vol s'allonge (les coûts de décollage et d'aéroport pèsent moins).",
+        "Un prix au km sous-estime les vols très courts : 300 km donneraient 18 € au minimum."
+      ]
+    }
+  }
+}
