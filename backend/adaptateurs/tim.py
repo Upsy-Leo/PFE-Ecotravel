@@ -8,7 +8,7 @@ On utilise la méthode « computeTypicalFlightEmissions » : elle ne demande que
 les deux aéroports (codes IATA) et renvoie des grammes de CO2e par passager.
 
 La distance est fournie par l'appelant : Travel Impact Model ne la donne pas.
-Elle viendra du fichier des aéroports (OurAirports), pas encore embarqué.
+Le comparateur la calcule à vol d'oiseau entre les deux aéroports (aeroports.py).
 """
 
 import urllib.parse
@@ -18,6 +18,11 @@ from backend.modeles import Option
 from backend.moteur_co2 import calculer_co2, charger_niveaux, trouver_niveau
 
 URL = "https://travelimpactmodel.googleapis.com/v1/flights:computeTypicalFlightEmissions"
+
+
+def connait_le_trajet(option):
+    """Vrai si le CO2 de cette option vient bien de Travel Impact Model, pas du repli ADEME."""
+    return not option.source["co2"].startswith("Repli")
 
 
 def option_vol(origine, destination, distance_km, cle):
@@ -40,18 +45,22 @@ def option_vol(origine, destination, distance_km, cle):
             corps={"markets": [{"origin": origine, "destination": destination}]},
         )
         try:
-            # Si le trajet est inconnu, la réponse arrive sans « emissionsGramsPerPax ».
-            return {"grammes": reponse["typicalFlightEmissions"][0]["emissionsGramsPerPax"]["economy"]}
+            vol = reponse["typicalFlightEmissions"][0]
         except (KeyError, IndexError, TypeError) as erreur:
-            raise commun.ErreurSource(f"Pas d'émissions dans la réponse : {reponse}") from erreur
+            raise commun.ErreurSource(f"Réponse inattendue : {reponse}") from erreur
+        # Si la source ne connaît pas ce trajet (pas de vol direct entre ces aéroports),
+        # elle répond sans « emissionsGramsPerPax ». Ce n'est pas une panne : on le
+        # met en cache aussi, pour ne pas reposer la question à chaque fois.
+        return {"grammes": vol.get("emissionsGramsPerPax", {}).get("economy")}
 
     donnees, date_cache = commun.avec_repli(f"tim:{origine}:{destination}", appel_direct)
 
-    if donnees is None:
-        # Ni source ni cache : repli sur le facteur ADEME.
+    if donnees is None or donnees["grammes"] is None:
+        # Source en panne sans cache, ou trajet inconnu de la source : repli sur le facteur ADEME.
+        raison = "indisponible" if donnees is None else "ne connaît pas ce trajet"
         co2 = calculer_co2("avion", distance_km)
         co2_kg, intensite, niveau, incertitude = co2.co2_kg, co2.intensite_g_pkm, co2.niveau, co2.incertitude_kg
-        source_co2 = f"Repli, Travel Impact Model indisponible. {co2.source} ({co2.statut})"
+        source_co2 = f"Repli, Travel Impact Model {raison}. {co2.source} ({co2.statut})"
     else:
         co2_kg = donnees["grammes"] / 1000
         intensite = donnees["grammes"] / distance_km
@@ -73,7 +82,7 @@ def option_vol(origine, destination, distance_km, cle):
         niveau=niveau,
         incertitude=incertitude,
         source={
-            "distance": "Fournie à l'adaptateur",
+            "distance": f"Vol d'oiseau entre les aéroports {origine} et {destination}",
             "duree": "Barème (à valider) : vol direct + temps d'aéroport",
             "prix": commun.SOURCE_PRIX_BAREME,
             "co2": source_co2,

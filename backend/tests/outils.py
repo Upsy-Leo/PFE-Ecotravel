@@ -31,6 +31,10 @@ class TestAdaptateur(unittest.TestCase):
         """La source ne répond plus."""
         return self._remplacer_appel(mock.Mock(side_effect=commun.ErreurSource("panne simulée")))
 
+    def simuler_sources(self, fonction):
+        """Chaque appel est traité par « fonction(url, corps=None, entetes=None) »."""
+        return self._remplacer_appel(mock.Mock(side_effect=fonction))
+
     def _remplacer_appel(self, faux_appel):
         remplacement = mock.patch.object(commun, "appeler_json", faux_appel)
         remplacement.start()
