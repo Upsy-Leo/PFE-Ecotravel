@@ -1,8 +1,9 @@
 """Tests de l'adaptateur OpenRouteService, avec des réponses simulées."""
 
 import unittest
+from unittest import mock
 
-from backend.adaptateurs import ors
+from backend.adaptateurs import commun, ors
 from backend.moteur_co2 import calculer_co2
 from backend.tests.outils import LYON, PARIS, TestAdaptateur
 
@@ -70,6 +71,16 @@ class TestOptionVoiture(TestAdaptateur):
         self.simuler_reponse({"error": {"code": 2010, "message": "point introuvable"}})
         option = ors.option_voiture(PARIS, LYON, "fausse-cle")
         self.assertIn("Barème", option.source["distance"])
+
+
+    def test_pas_de_route_pas_d_option(self):
+        # Vraie forme du refus pour Paris-New York (relevé du 2026-11-13) : ce n'est pas une panne.
+        refus = commun.ErreurSource("HTTP 404", corps='{"error":{"code":2009,"message":"Route could not be found"}}')
+        faux_appel = self.simuler_sources(mock.Mock(side_effect=refus))
+        self.assertIsNone(ors.option_voiture(PARIS, [-74.006, 40.7128], "fausse-cle"))
+        # Le refus est mis en cache : la question n'est pas reposée.
+        self.assertIsNone(ors.option_voiture(PARIS, [-74.006, 40.7128], "fausse-cle"))
+        self.assertEqual(faux_appel.call_count, 1)
 
 
 class TestGeocoder(TestAdaptateur):

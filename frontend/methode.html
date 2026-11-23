@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Méthode et limites · [NOM]</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <a class="evitement" href="#contenu">Aller au contenu</a>
+
+  <header class="entete">
+    <div class="largeur entete-ligne">
+      <a class="logo" href="index.html">
+        <svg aria-hidden="true" width="32" height="28" viewBox="0 0 32 28" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M2 26V8a6 6 0 0 1 6-6h14a6 6 0 0 1 6 6v8"/>
+          <path d="M9 21h20M23 15l6 6-6 6"/>
+        </svg>
+        <span>[NOM]</span>
+      </a>
+      <nav aria-label="Navigation principale">
+        <ul class="menu">
+          <li><a href="index.html">Comparer</a></li>
+          <li><a href="methode.html" aria-current="page">Méthode et limites</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main id="contenu" class="largeur">
+    <div class="texte">
+      <p class="surtitre">Comment c'est calculé ?</p>
+      <h1>Méthode et limites</h1>
+      <p class="chapeau">D'où viennent les chiffres, comment ils sont calculés, et ce qu'ils ne disent pas.</p>
+
+      <div class="note">
+        <p><strong>Version de travail.</strong> Ce site est un projet étudiant. Les facteurs d'émission, les seuils des niveaux et les barèmes ci-dessous sont provisoires : ils portent la mention « à valider » tant que l'équipe ne les a pas vérifiés. Les tableaux de cette page sont lus directement dans la configuration du site : ils sont donc toujours ceux que le calcul utilise.</p>
+      </div>
+
+      <nav aria-labelledby="titre-sommaire">
+        <h2 id="titre-sommaire">Sommaire</h2>
+        <ul class="liste sommaire">
+          <li><a href="#perimetre">Ce que le site compare</a></li>
+          <li><a href="#co2">Le CO₂</a></li>
+          <li><a href="#niveaux">Les niveaux A à E</a></li>
+          <li><a href="#ecart">L'avion : deux méthodes, deux résultats</a></li>
+          <li><a href="#durees">Les durées</a></li>
+          <li><a href="#prix">Les prix</a></li>
+          <li><a href="#fiabilite">Provenance et repli</a></li>
+          <li><a href="#exclusions">Ce qui n'est pas compté</a></li>
+          <li><a href="#limites">Limites connues</a></li>
+          <li><a href="#sources">Sources et licences</a></li>
+        </ul>
+      </nav>
+
+      <h2 id="perimetre">Ce que le site compare</h2>
+      <p>Pour un trajet d'une ville à une autre, le site présente jusqu'à quatre modes : train, car, voiture et avion. Pour chacun, il donne un prix, une durée et des émissions de CO₂e, toujours <strong>pour une personne et pour un aller simple</strong>.</p>
+      <p>Le site ne vend rien, ne crée pas de compte et n'enregistre aucune donnée personnelle. Il ne donne ni horaires ni billets : ce sont des ordres de grandeur pour comparer.</p>
+
+      <h2 id="co2">Le CO₂</h2>
+      <p>La même formule sert pour tous les modes :</p>
+      <p><strong>CO₂e (kg) = distance (km) × facteur d'émission (g par passager et par km) ÷ 1 000</strong></p>
+      <p>Les facteurs viennent d'Impact CO2, le service de l'ADEME. Ils ne comptent pas la fabrication des véhicules.</p>
+      <div class="cadre-tableau" tabindex="0" role="region" aria-labelledby="legende-facteurs">
+        <table>
+          <caption id="legende-facteurs">Facteurs d'émission utilisés</caption>
+          <thead><tr><th scope="col">Mode</th><th scope="col">Cas</th><th scope="col">Facteur (g/passager·km)</th><th scope="col">Fourchette</th><th scope="col">Source</th><th scope="col">Statut</th></tr></thead>
+          <tbody id="tableau-facteurs"><tr><td colspan="6">Chargement…</td></tr></tbody>
+        </table>
+      </div>
+      <h3>Points encore à vérifier sur ces facteurs</h3>
+      <ul id="facteurs-a-verifier" class="liste"></ul>
+      <p><strong>Pour l'avion</strong>, le site interroge d'abord le Travel Impact Model de Google, qui donne les émissions typiques d'un vol entre deux aéroports, en classe économique. S'il ne répond pas ou ne connaît pas le trajet, le calcul se replie sur le facteur ADEME, et la source affichée le dit.</p>
+      <p>La fourchette affichée sous les kg (« entre … et … ») applique à la même distance le facteur le plus bas et le plus haut du tableau. Le Travel Impact Model ne fournit pas de fourchette.</p>
+
+      <h2 id="niveaux">Les niveaux A à E</h2>
+      <p>La lettre ne dépend pas de la longueur du trajet, mais de son <strong>intensité</strong> : les grammes de CO₂e émis par personne et par kilomètre. Elle est toujours écrite en toutes lettres, jamais donnée par la couleur seule.</p>
+      <div class="cadre-tableau" tabindex="0" role="region" aria-labelledby="legende-niveaux">
+        <table>
+          <caption id="legende-niveaux">Seuils des niveaux (provisoires)</caption>
+          <thead><tr><th scope="col">Niveau</th><th scope="col">Lecture</th><th scope="col">Intensité (g CO₂e par passager·km)</th></tr></thead>
+          <tbody id="tableau-niveaux"><tr><td colspan="3">Chargement…</td></tr></tbody>
+        </table>
+      </div>
+      <p>Ces seuils sont un choix de l'équipe, pas une norme officielle. Le site n'affiche pas encore la part d'un budget carbone annuel : la valeur de référence n'est pas encore sourcée.</p>
+
+      <h2 id="ecart">L'avion : deux méthodes, deux résultats</h2>
+      <div class="note">
+        <p><strong>Point de méthode non tranché.</strong> Le Travel Impact Model et les facteurs ADEME ne donnent pas du tout le même résultat pour un même vol.</p>
+      </div>
+      <p>Exemple relevé le 12 novembre 2026 pour Paris–Bangkok (environ 9 450 km) : le Travel Impact Model donne 667 kg de CO₂e par passager, soit environ 71 g par km (niveau C). Le facteur ADEME du site donnerait environ 1 680 kg, soit 178 g par km (niveau D).</p>
+      <p>Comme les autres modes sont calculés avec les facteurs ADEME, utiliser le Travel Impact Model pour les vols <strong>peut avantager l'avion</strong> dans la comparaison. L'équipe n'a pas encore choisi entre garder les deux sources, tout calculer avec l'ADEME, ou afficher les deux valeurs. En attendant, la source de chaque valeur est indiquée sur chaque option.</p>
+
+      <h2 id="durees">Les durées</h2>
+      <ul class="liste">
+        <li><strong>Voiture</strong> : durée de l'itinéraire calculé par OpenRouteService, sans pause ni embouteillage.</li>
+        <li><strong>Train et car</strong> : trajet le plus rapide trouvé par Transitous parmi les départs du jour demandé entre 5 h et 17 h (heure universelle), de centre-ville à centre-ville, correspondances et accès à la gare compris. C'est une durée typique, pas un horaire.</li>
+        <li><strong>Avion</strong> : estimation par formule, détaillée ci-dessous.</li>
+      </ul>
+      <h3>Durée d'un vol</h3>
+      <p><strong>Durée = temps d'aéroport + temps de décollage et d'atterrissage + distance ÷ vitesse en vol.</strong> La distance est celle à vol d'oiseau entre les deux aéroports.</p>
+      <ul id="hypotheses-avion" class="liste"></ul>
+      <h3>Quand une source ne répond pas</h3>
+      <p>Sans réponse d'une source et sans rien en mémoire, la distance et la durée sont estimées : distance = distance à vol d'oiseau × coefficient de détour ; durée = distance ÷ vitesse moyenne.</p>
+      <div class="cadre-tableau" tabindex="0" role="region" aria-labelledby="legende-bareme">
+        <table>
+          <caption id="legende-bareme">Barème de repli pour la distance et la durée (provisoire)</caption>
+          <thead><tr><th scope="col">Mode</th><th scope="col">Coefficient de détour</th><th scope="col">Vitesse moyenne</th></tr></thead>
+          <tbody id="tableau-bareme"><tr><td colspan="3">Chargement…</td></tr></tbody>
+        </table>
+      </div>
+      <p>Les distances en train et en car sont toujours estimées de cette façon (distance à vol d'oiseau × coefficient de détour), car Transitous ne les fournit pas. Le CO₂ du train et du car en dépend.</p>
+
+      <h2 id="prix">Les prix</h2>
+      <p>Tous les prix sont <strong>indicatifs</strong> et donnés en <strong>fourchette</strong>, jamais en valeur unique. Ils ne dépendent pas de la date demandée.</p>
+      <ul class="liste">
+        <li><strong>Train en France</strong> : fourchette de la grille tarifaire SNCF (TGV INOUI et OUIGO), en 2de classe, plein tarif sans carte de réduction, toutes gares de la ville confondues. Ce n'est pas le prix d'un billet à une date donnée.</li>
+        <li><strong>Autres cas</strong> : distance × prix au kilomètre du barème ci-dessous.</li>
+      </ul>
+      <div class="cadre-tableau" tabindex="0" role="region" aria-labelledby="legende-prix">
+        <table>
+          <caption id="legende-prix">Barème de prix au kilomètre (provisoire)</caption>
+          <thead><tr><th scope="col">Mode</th><th scope="col">Distance</th><th scope="col">Prix minimum</th><th scope="col">Prix maximum</th></tr></thead>
+          <tbody id="tableau-prix"><tr><td colspan="4">Chargement…</td></tr></tbody>
+        </table>
+      </div>
+      <h3>Hypothèses du barème de prix</h3>
+      <div id="hypotheses-prix"></div>
+
+      <h2 id="fiabilite">Provenance et repli</h2>
+      <p>Chaque valeur porte sa provenance : sur chaque option, « Sources des valeurs » indique d'où viennent le prix, la durée, le CO₂ et la distance.</p>
+      <p>Quand une source ne répond pas, le site ne s'arrête pas : il dégrade la précision et le dit. Trois niveaux, dans cet ordre :</p>
+      <ol class="liste">
+        <li>la source interrogée en direct ;</li>
+        <li>la dernière réponse gardée en mémoire pour la même demande (mention « cache du … ») ; une réponse de moins de 30 jours est réutilisée sans réinterroger la source ;</li>
+        <li>une estimation par barème (mention « Barème » ou « Repli », et « Estimation » sur l'option).</li>
+      </ol>
+
+      <h2 id="exclusions">Ce qui n'est pas compté</h2>
+      <ul class="liste">
+        <li><strong>Les traînées de condensation</strong> et les autres effets de l'avion hors CO₂. Le projet a choisi de les exclure ; il reste à vérifier que les facteurs ADEME utilisés les excluent bien.</li>
+        <li><strong>La fabrication</strong> des véhicules et la construction des infrastructures.</li>
+        <li><strong>L'hébergement</strong> et les activités sur place.</li>
+        <li><strong>Les trajets d'approche</strong> : aller à l'aéroport ou en revenir n'est compté ni dans la durée, ni dans le prix, ni dans le CO₂ de l'avion.</li>
+        <li><strong>Le retour</strong> : tout est calculé pour un aller simple.</li>
+        <li><strong>Le covoiturage</strong> : la voiture est comptée avec une seule personne à bord, qui paie tout et porte toutes les émissions.</li>
+        <li>Pour la voiture : l'usure, l'assurance, le stationnement. Pour l'avion : les bagages en soute.</li>
+      </ul>
+
+      <h2 id="limites">Limites connues</h2>
+      <ul class="liste">
+        <li><strong>Un seul trajet à la fois</strong>, sans étape, pour une seule personne.</li>
+        <li><strong>La date</strong> ne sert qu'à la durée en train et en car. Une date lointaine, pour laquelle les horaires ne sont pas publiés, peut donner « aucun trajet ».</li>
+        <li><strong>La durée de l'avion avantage l'avion</strong> : elle ne compte pas le trajet entre la ville et l'aéroport, alors que le train et le car sont comptés de centre à centre.</li>
+        <li><strong>Le choix des aéroports</strong> : les deux grands aéroports les plus proches de chaque ville, à moins de 100 km. Le vol est supposé direct, même si aucun vol direct n'existe.</li>
+        <li><strong>Le train hors de France</strong> : le facteur d'émission est celui d'un TGV français, et le prix vient du barème. Les deux peuvent être loin de la réalité à l'étranger.</li>
+        <li><strong>Les barèmes</strong> de durée et de prix sont calés sur très peu de trajets (souvent le seul Paris–Lyon).</li>
+        <li><strong>En cas de panne d'une source</strong>, le barème peut proposer un train ou un car là où il n'en existe pas : il ne sait pas si le trajet est réellement desservi.</li>
+        <li><strong>Voiture</strong> : aucun itinéraire n'est proposé au-delà de 6 000 km.</li>
+      </ul>
+
+      <h2 id="sources">Sources et licences</h2>
+      <ul class="liste">
+        <li><strong>Facteurs d'émission</strong> : Impact CO2, ADEME (relevé du 10 novembre 2026).</li>
+        <li><strong>Émissions des vols</strong> : Travel Impact Model, Google.</li>
+        <li><strong>Géocodage et itinéraires en voiture</strong> : OpenRouteService, d'après les données © les contributeurs d'OpenStreetMap.</li>
+        <li><strong>Durées en train et en car</strong> : Transitous, service libre pour un usage non commercial.</li>
+        <li><strong>Prix des trains</strong> : SNCF Voyageurs, « Tarifs TGV INOUI et OUIGO », licence ODbL (version du 17 mars 2026).</li>
+        <li><strong>Aéroports</strong> : OurAirports, domaine public.</li>
+        <li><strong>Prix des carburants</strong> : données ouvertes « Prix des carburants en France », ministère de l'Économie (relevé du 12 novembre 2026).</li>
+        <li><strong>Police</strong> : Manrope, licence SIL Open Font License.</li>
+      </ul>
+      <p><a href="index.html">Revenir à la comparaison</a></p>
+    </div>
+  </main>
+
+  <footer class="pied">
+    <div class="largeur">
+      <p>[NOM] · Prix, durée, CO₂. Projet étudiant : prix indicatifs et estimations de CO₂e par personne, pour un aller simple.</p>
+    </div>
+  </footer>
+
+  <script src="methode.js"></script>
+</body>
+</html>

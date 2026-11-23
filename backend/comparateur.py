@@ -68,7 +68,10 @@ def comparer(depart, arrivee, date, cles):
         "avion": (avion, raison_avion),
         "train": (train, "Aucun trajet en train trouvé par Transitous ce jour-là."),
         "bus": (transitous.option_bus(a, b, contact, date), "Aucun trajet en car trouvé par Transitous ce jour-là."),
-        "voiture": (ors.option_voiture(a, b, cle_ors), None),
+        "voiture": (
+            ors.option_voiture(a, b, cle_ors),
+            "Pas d'itinéraire routier proposé par OpenRouteService (mer à traverser ou trajet de plus de 6 000 km).",
+        ),
     }
     return {
         "depart": lieu_depart,

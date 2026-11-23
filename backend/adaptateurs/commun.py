@@ -31,7 +31,15 @@ FRAICHEUR_CACHE_JOURS = 30
 
 
 class ErreurSource(Exception):
-    """La source n'a pas répondu, a refusé la requête ou a répondu autre chose que prévu."""
+    """La source n'a pas répondu, a refusé la requête ou a répondu autre chose que prévu.
+
+    « corps » garde le texte brut d'une réponse d'erreur HTTP (vide sinon), pour les
+    adaptateurs qui doivent distinguer un refus motivé d'une panne.
+    """
+
+    def __init__(self, message, corps=""):
+        super().__init__(message)
+        self.corps = corps
 
 
 # --- Appel d'une source ---
@@ -55,7 +63,7 @@ def appeler_json(url, corps=None, entetes=None):
             return json.loads(reponse.read().decode("utf-8"))
     except urllib.error.HTTPError as erreur:
         texte = erreur.read().decode("utf-8", errors="replace")
-        raise ErreurSource(f"HTTP {erreur.code} : {texte[:500]}") from erreur
+        raise ErreurSource(f"HTTP {erreur.code} : {texte[:500]}", corps=texte) from erreur
     except (urllib.error.URLError, TimeoutError, ValueError) as erreur:
         raise ErreurSource(f"Pas de réponse exploitable : {erreur}") from erreur
 

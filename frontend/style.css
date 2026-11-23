@@ -1,1 +1,230 @@
-/* Styles du comparateur. À écrire (tâche 4). */
+/* Styles du comparateur, d'après la direction artistique (dossier DA/).
+   Mobile d'abord : la mise en page de base est celle du téléphone, les écrans
+   plus larges sont gérés à la fin du fichier.
+   Les tailles sont en rem pour suivre la taille de texte choisie par l'utilisateur. */
+
+/* --- Police (Manrope, licence OFL, hébergée ici : aucun appel à un site extérieur) --- */
+@font-face {
+  font-family: "Manrope";
+  src: url("polices/Manrope-Variable.ttf") format("truetype");
+  font-weight: 200 800;
+  font-display: swap;
+}
+
+/* --- Couleurs et mesures de la DA --- */
+:root {
+  --foret: #244B3E;
+  --foret-survol: #193B30;
+  --lime: #C9ED89;
+  --creme: #F6F7F2;
+  --blanc: #FFFFFF;
+  --gris-chaud: #626C66;   /* textes secondaires : 5,4:1 sur blanc */
+  --vert-pale: #EAF5E5;
+  --texte: #263E35;
+  --filet: #DFE5DD;
+  --bord-champ: #717A73;   /* contour des champs : au moins 3:1 sur blanc */
+  --pastille: #F0F3EF;
+  --focus: #466C51;
+  --erreur: #B33842;
+  --erreur-fond: #FBECEE;
+  --encre-co2: #10261D;
+
+  /* Échelle CO2 : toujours accompagnée de la lettre, jamais la couleur seule. */
+  --niveau-a: #279B6A;
+  --niveau-b: #8FB747;
+  --niveau-c: #E3C536;
+  --niveau-d: #F18B32;
+  --niveau-e: #D96A78;
+
+  --rayon-carte: 16px;
+  --rayon-champ: 12px;
+  --ombre: 0 4px 20px #244B3E0A;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: "Manrope", system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: 1rem;
+  font-weight: 500;
+  line-height: 1.5;
+  color: var(--texte);
+  background: var(--creme);
+}
+
+.largeur { max-width: 70rem; margin: 0 auto; padding: 0 1.5rem; }
+
+h1, h2, h3 { color: var(--foret); font-weight: 800; letter-spacing: -0.01em; margin: 0 0 0.5rem; }
+h1 { font-size: 2rem; line-height: 1.19; }
+h2 { font-size: 1.625rem; line-height: 1.3; }
+h3 { font-size: 1.125rem; line-height: 1.35; }
+p { margin: 0 0 1rem; }
+
+a { color: var(--foret); font-weight: 700; text-underline-offset: 0.2em; }
+a:hover { color: var(--foret-survol); text-decoration-thickness: 2px; }
+
+/* Focus clavier : contour de 3 px toujours visible, sur tous les éléments. */
+:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; border-radius: 4px; }
+
+/* La règle [hidden] du navigateur est faible : on la renforce. */
+[hidden] { display: none !important; }
+
+.evitement {
+  position: absolute; left: 1rem; top: -4rem;
+  background: var(--foret); color: var(--blanc);
+  padding: 0.75rem 1rem; border-radius: var(--rayon-champ); z-index: 10;
+}
+.evitement:focus { top: 1rem; color: var(--blanc); }
+
+/* --- En-tête et pied --- */
+.entete-ligne {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+  gap: 0.5rem 1.5rem; padding-top: 1.25rem; padding-bottom: 1.25rem;
+}
+.logo {
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  font-size: 1.5rem; font-weight: 800; letter-spacing: -0.03em; text-decoration: none;
+}
+.menu { display: flex; flex-wrap: wrap; gap: 0.25rem 1.25rem; list-style: none; margin: 0; padding: 0; }
+.menu a { display: inline-block; padding: 0.6rem 0; text-decoration: none; }
+.menu a:hover { text-decoration: underline; }
+/* Page en cours : soulignée (pas seulement une couleur). */
+.menu a[aria-current="page"] { text-decoration: underline; text-decoration-thickness: 2px; }
+
+.pied { margin-top: 3rem; padding: 1.5rem 0 2rem; border-top: 1px solid var(--filet); font-size: 0.875rem; color: var(--gris-chaud); }
+
+main > section, main > form { margin-bottom: 2rem; }
+
+/* --- Textes --- */
+.surtitre {
+  font-size: 0.75rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--gris-chaud); margin: 0 0 0.75rem;
+}
+.chapeau { font-size: 1.125rem; color: var(--gris-chaud); max-width: 34rem; }
+.meta { font-size: 0.875rem; color: var(--gris-chaud); }
+.aide { font-size: 0.875rem; color: var(--gris-chaud); margin: 0.75rem 0 0; text-align: center; }
+
+/* --- Cartes --- */
+.carte {
+  background: var(--blanc); border-radius: var(--rayon-carte); box-shadow: var(--ombre);
+  padding: 1.25rem; margin-bottom: 1rem;
+}
+.liste { margin: 0 0 1rem; padding-left: 1.2rem; }
+.liste li { margin-bottom: 0.4rem; }
+
+/* --- Formulaire de recherche --- */
+.recherche { padding: 1.5rem; }
+.champs { display: grid; gap: 1rem; margin-bottom: 1.25rem; }
+.champ label { display: block; font-size: 0.875rem; color: var(--gris-chaud); margin-bottom: 0.25rem; }
+.champ input {
+  width: 100%; min-height: 3rem; padding: 0.6rem 0.9rem;
+  font: inherit; font-weight: 700; color: var(--foret);
+  background: var(--blanc); border: 1px solid var(--bord-champ); border-radius: var(--rayon-champ);
+}
+.champ input::placeholder { color: var(--gris-chaud); font-weight: 500; opacity: 1; }
+.champ input:hover { border-color: var(--foret); }
+/* Champ en erreur : filet plus épais ET message écrit (pas seulement du rouge). */
+.champ input[aria-invalid="true"] { border: 2px solid var(--erreur); }
+.message-erreur { color: var(--erreur); font-size: 0.875rem; font-weight: 700; margin: 0.35rem 0 0; }
+
+.bouton {
+  display: inline-flex; align-items: center; justify-content: center; gap: 0.6rem;
+  width: 100%; min-height: 3rem; padding: 0.6rem 1.25rem;
+  font: inherit; font-weight: 700; border: 2px solid transparent; border-radius: var(--rayon-champ); cursor: pointer;
+}
+.bouton-principal { background: var(--foret); color: var(--blanc); }
+.bouton-principal:hover { background: var(--foret-survol); }
+.bouton[disabled] { background: #E4E8E1; color: #717A73; cursor: not-allowed; }
+
+/* --- États --- */
+.etat { min-height: 1.5rem; font-weight: 700; color: var(--foret); }
+.encart-erreur {
+  background: var(--erreur-fond); color: var(--erreur); border: 2px solid var(--erreur);
+  border-radius: var(--rayon-champ); padding: 1rem 1.25rem; margin-bottom: 1.5rem; font-weight: 700;
+}
+
+/* --- Résultats : une carte par mode, toutes sur le même modèle --- */
+#titre-resultats { margin-bottom: 0.25rem; }
+.options { list-style: none; margin: 1.25rem 0 1rem; padding: 0; display: grid; gap: 1rem; }
+.option { margin: 0; display: flex; flex-direction: column; }
+
+.option-tete { display: flex; align-items: flex-start; gap: 0.75rem; }
+.picto {
+  flex: none; width: 2.5rem; height: 2.5rem; border-radius: 10px; background: var(--pastille);
+  display: grid; place-items: center; color: var(--foret);
+}
+.option-nom { flex: 1; min-width: 0; }
+.option-nom h3 { margin: 0.35rem 0 0.25rem; }
+.badges { display: flex; flex-wrap: wrap; gap: 0.35rem; list-style: none; margin: 0; padding: 0; }
+.badge {
+  background: var(--vert-pale); color: var(--foret); border-radius: 6px;
+  font-size: 0.75rem; font-weight: 700; padding: 0.15rem 0.5rem;
+}
+
+/* Les valeurs sont une liste « nom → valeur » (dl) : le nom est lu avant chaque valeur. */
+.valeurs { margin: 1rem 0 0; display: grid; gap: 0.75rem; }
+.valeur { border-top: 1px solid var(--filet); padding-top: 0.75rem; }
+.valeur dt { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--gris-chaud); }
+.valeur dd { margin: 0.15rem 0 0; }
+.chiffre { font-size: 1.5rem; font-weight: 800; color: var(--foret); line-height: 1.3; }
+.precision { display: block; font-size: 0.875rem; color: var(--gris-chaud); }
+
+.co2 { display: flex; align-items: center; gap: 0.75rem; }
+.lettre {
+  flex: none; width: 2.5rem; height: 2.5rem; border-radius: 8px;
+  display: grid; place-items: center;
+  font-size: 1.25rem; font-weight: 800; color: var(--encre-co2);
+  border: 1px solid var(--encre-co2);
+}
+.lettre-a { background: var(--niveau-a); }
+.lettre-b { background: var(--niveau-b); }
+.lettre-c { background: var(--niveau-c); }
+.lettre-d { background: var(--niveau-d); }
+.lettre-e { background: var(--niveau-e); }
+
+/* Sources : dépliables, pour ne pas noyer la carte. */
+.sources { margin-top: 1rem; border-top: 1px solid var(--filet); padding-top: 0.5rem; }
+.sources summary { cursor: pointer; font-weight: 700; color: var(--foret); padding: 0.6rem 0; min-height: 2.75rem; }
+.sources dl { margin: 0; font-size: 0.875rem; }
+.sources dt { font-weight: 700; margin-top: 0.5rem; }
+.sources dd { margin: 0; color: var(--gris-chaud); overflow-wrap: anywhere; }
+
+/* Légende de l'échelle A à E */
+.echelle { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.5rem; }
+.echelle li { display: flex; align-items: center; gap: 0.75rem; }
+.echelle .lettre { width: 2rem; height: 2rem; font-size: 1rem; }
+
+/* Repères de l'accueil */
+.reperes { list-style: none; margin: 0 0 1rem; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr)); gap: 1rem; }
+.reperes strong { display: block; color: var(--foret); font-weight: 800; }
+.reperes span { font-size: 0.875rem; color: var(--gris-chaud); }
+
+/* --- Page « Méthode et limites » --- */
+.texte { max-width: 46rem; }
+.texte h2 { margin-top: 2.5rem; }
+.texte h3 { margin-top: 1.5rem; }
+.sommaire { columns: 2 14rem; }
+.note {
+  background: var(--vert-pale); border-left: 4px solid var(--foret); border-radius: 0 var(--rayon-champ) var(--rayon-champ) 0;
+  padding: 1rem 1.25rem; margin: 0 0 1rem;
+}
+.note p:last-child { margin-bottom: 0; }
+
+/* Un tableau large défile dans son cadre, sans faire défiler toute la page. */
+.cadre-tableau { overflow-x: auto; margin: 0 0 1rem; background: var(--blanc); border-radius: var(--rayon-champ); border: 1px solid var(--filet); }
+table { border-collapse: collapse; width: 100%; font-size: 0.875rem; }
+caption { text-align: left; font-weight: 700; color: var(--foret); padding: 0.75rem 1rem; }
+th, td { text-align: left; vertical-align: top; padding: 0.6rem 1rem; border-top: 1px solid var(--filet); }
+thead th { color: var(--foret); white-space: nowrap; }
+tbody th { color: var(--foret); }
+
+/* --- Écrans plus larges --- */
+@media (min-width: 44rem) {
+  h1 { font-size: 2.75rem; }
+  .champs { grid-template-columns: 1fr 1fr 1fr; }
+  .bouton { width: auto; min-width: 14rem; }
+  .aide { text-align: left; }
+  /* Les options passent côte à côte : c'est là que la comparaison se lit le mieux. */
+  .options { grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); }
+}

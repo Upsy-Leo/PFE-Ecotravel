@@ -10,12 +10,16 @@ Rappels : OpenRouteService attend les points dans l'ordre [longitude, latitude].
 Plan gratuit : 2 000 itinéraires et 1 000 géocodages par jour, d'où le cache.
 """
 
+import json
 import urllib.parse
 
 from backend.adaptateurs import commun
 
 URL_GEOCODAGE = "https://api.openrouteservice.org/geocode/search"
 URL_ITINERAIRE = "https://api.openrouteservice.org/v2/directions/driving-car"
+# Codes d'erreur relevés le 2026-11-13 : 2004 = trajet de plus de 6 000 km (Paris-Bangkok),
+# 2009 = aucune route entre les deux points (Paris-New York), 2010 = point loin de toute route.
+CODES_SANS_ROUTE = (2004, 2009, 2010)
 BAREME = "Barème (à valider), OpenRouteService indisponible"
 
 
@@ -50,22 +54,44 @@ def geocoder(texte, cle):
     }
 
 
+def _est_un_refus_sans_route(erreur):
+    """Vrai si OpenRouteService a répondu « pas d'itinéraire » (ce n'est pas une panne)."""
+    try:
+        return json.loads(erreur.corps)["error"]["code"] in CODES_SANS_ROUTE
+    except (ValueError, KeyError, TypeError):
+        return False
+
+
 def option_voiture(depart, arrivee, cle):
-    """Renvoie l'Option « voiture » entre deux points [longitude, latitude]."""
+    """Renvoie l'Option « voiture » entre deux points [longitude, latitude].
+
+    Renvoie None si OpenRouteService répond qu'il n'y a pas d'itinéraire routier
+    (océan à traverser, ou trajet de plus de 6 000 km). En cas de panne, en
+    revanche, la distance et la durée sont estimées avec le barème.
+    """
 
     def appel_direct():
-        reponse = commun.appeler_json(
-            URL_ITINERAIRE, corps={"coordinates": [depart, arrivee]}, entetes={"Authorization": cle}
-        )
+        try:
+            reponse = commun.appeler_json(
+                URL_ITINERAIRE, corps={"coordinates": [depart, arrivee]}, entetes={"Authorization": cle}
+            )
+        except commun.ErreurSource as erreur:
+            if _est_un_refus_sans_route(erreur):
+                return {"route": False}  # mis en cache, comme une réponse normale
+            raise
         try:
             resume = reponse["routes"][0]["summary"]
             # La source répond en mètres et en secondes.
-            return {"distance_km": resume["distance"] / 1000, "duree_min": resume["duration"] / 60}
+            return {"route": True, "distance_km": resume["distance"] / 1000, "duree_min": resume["duration"] / 60}
         except (KeyError, IndexError, TypeError) as erreur:
             raise commun.ErreurSource(f"Réponse d'itinéraire inattendue : {reponse}") from erreur
 
     cle_cache = f"ors:voiture:{commun.cle_coordonnees(depart)}:{commun.cle_coordonnees(arrivee)}"
     donnees, date_cache = commun.avec_repli(cle_cache, appel_direct)
+
+    # « get » : les réponses mises en cache avant l'ajout de « route » n'ont pas ce champ.
+    if donnees is not None and not donnees.get("route", True):
+        return None
 
     if donnees is None:
         # Ni source ni cache : on estime avec le barème, et on le dit.

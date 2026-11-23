@@ -1,1 +1,118 @@
-<!-- Écran de comparaison. À écrire (tâche 4) : version statique avec des données fictives, accessible WCAG 2.2 AA. -->
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Comparer un trajet · [NOM]</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Lien d'évitement : premier élément atteint au clavier, il saute l'en-tête. -->
+  <a class="evitement" href="#contenu">Aller au contenu</a>
+
+  <header class="entete">
+    <div class="largeur entete-ligne">
+      <a class="logo" href="index.html">
+        <svg aria-hidden="true" width="32" height="28" viewBox="0 0 32 28" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M2 26V8a6 6 0 0 1 6-6h14a6 6 0 0 1 6 6v8"/>
+          <path d="M9 21h20M23 15l6 6-6 6"/>
+        </svg>
+        <span>[NOM]</span>
+      </a>
+      <nav aria-label="Navigation principale">
+        <ul class="menu">
+          <li><a href="index.html" aria-current="page">Comparer</a></li>
+          <li><a href="methode.html">Méthode et limites</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main id="contenu" class="largeur">
+    <!-- Présentation : masquée par app.js quand des résultats sont affichés. -->
+    <section id="presentation" aria-labelledby="titre-page">
+      <p class="surtitre">Chaque trajet compte</p>
+      <h1 id="titre-page">Le bon trajet, en toute clarté.</h1>
+      <p class="chapeau">Comparez le prix, la durée et le CO₂. Choisissez ce qui compte pour vous.</p>
+    </section>
+
+    <!-- Le formulaire recharge cette page avec ?depart=…&arrivee=…&date=… :
+         l'adresse d'une comparaison peut donc être copiée et partagée. -->
+    <form id="recherche" class="carte recherche" action="index.html" method="get" novalidate aria-labelledby="titre-recherche">
+      <h2 id="titre-recherche" class="surtitre">Votre trajet</h2>
+      <div class="champs">
+        <div class="champ">
+          <label for="depart">Départ</label>
+          <input id="depart" name="depart" type="text" autocomplete="off" required
+                 placeholder="Ville, par exemple Paris" aria-describedby="erreur-depart">
+          <p id="erreur-depart" class="message-erreur" hidden></p>
+        </div>
+        <div class="champ">
+          <label for="arrivee">Arrivée</label>
+          <input id="arrivee" name="arrivee" type="text" autocomplete="off" required
+                 placeholder="Ville, par exemple Lyon" aria-describedby="erreur-arrivee">
+          <p id="erreur-arrivee" class="message-erreur" hidden></p>
+        </div>
+        <div class="champ">
+          <label for="date">Date de l'aller</label>
+          <input id="date" name="date" type="date" required aria-describedby="erreur-date">
+          <p id="erreur-date" class="message-erreur" hidden></p>
+        </div>
+      </div>
+      <button type="submit" class="bouton bouton-principal">
+        Comparer
+        <svg aria-hidden="true" width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10h12M11 5l5 5-5 5"/></svg>
+      </button>
+      <p class="aide">Un seul trajet, pour une personne, en aller simple.</p>
+    </form>
+
+    <!-- Messages d'état (chargement, nombre de résultats) : lus par les lecteurs d'écran. -->
+    <p id="etat" class="etat" role="status"></p>
+
+    <!-- Erreur de la recherche (ville introuvable, serveur arrêté…). -->
+    <div id="erreur" class="encart-erreur" role="alert" hidden></div>
+
+    <section id="resultats" aria-labelledby="titre-resultats" hidden>
+      <h2 id="titre-resultats" tabindex="-1"></h2>
+      <p id="resume" class="meta"></p>
+      <ul id="options" class="options"></ul>
+
+      <div id="sans-option" class="carte" hidden>
+        <h3>Modes sans option pour ce trajet</h3>
+        <ul id="liste-sans-option" class="liste"></ul>
+      </div>
+
+      <div class="carte">
+        <h3>Lire le niveau CO₂</h3>
+        <p>La lettre dépend des grammes de CO₂e émis par personne et par kilomètre : A est le plus faible, E le plus élevé.</p>
+        <ul id="echelle" class="echelle"></ul>
+      </div>
+
+      <div class="carte">
+        <h3>À savoir sur ces chiffres</h3>
+        <ul id="avertissements" class="liste"></ul>
+        <p><a href="methode.html">Comment c'est calculé ? Méthode et limites</a></p>
+      </div>
+    </section>
+
+    <section id="reperes" aria-labelledby="titre-reperes">
+      <h2 id="titre-reperes" class="surtitre">Un choix, trois repères</h2>
+      <ul class="reperes">
+        <li><strong>Le prix</strong><span>Une fourchette indicative</span></li>
+        <li><strong>La durée</strong><span>Une estimation par mode</span></li>
+        <li><strong>Le CO₂</strong><span>Des kg et une lettre de A à E</span></li>
+      </ul>
+      <p class="meta">Des repères lisibles, pas des injonctions. Chaque valeur indique sa source.</p>
+      <p><a href="methode.html">Comment c'est calculé ?</a></p>
+    </section>
+  </main>
+
+  <footer class="pied">
+    <div class="largeur">
+      <p>[NOM] · Prix, durée, CO₂. Projet étudiant : prix indicatifs et estimations de CO₂e par personne, pour un aller simple. <a href="methode.html">Sources et méthode</a></p>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

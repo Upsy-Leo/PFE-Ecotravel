@@ -9,6 +9,7 @@ Puis, dans un navigateur :
     http://localhost:8000/comparer?depart=Paris&arrivee=Lyon&date=2026-12-01
 
 - /comparer renvoie les options en JSON ;
+- /reference renvoie les facteurs, seuils et barèmes (pour la page « Méthode et limites ») ;
 - toute autre adresse sert les fichiers du dossier frontend/ (index.html, style.css, app.js).
 
 Le serveur n'écoute que sur cet ordinateur (127.0.0.1). Il utilise le serveur web
@@ -57,18 +58,34 @@ def repondre_a_comparer(parametres, cles):
         return 500, {"erreur": "Erreur interne du serveur. Le détail est dans la console du serveur."}
 
 
+def lire_reference():
+    """Fichiers de configuration affichés par la page « Méthode et limites ».
+
+    La page lit les facteurs, les seuils et les barèmes ici plutôt que de les
+    recopier : si l'équipe change une valeur dans un fichier JSON, la page suit.
+    """
+    donnees = RACINE / "backend" / "donnees"
+    return {
+        nom: json.loads((donnees / f"{nom}.json").read_text(encoding="utf-8"))
+        for nom in ("facteurs_emission", "niveaux_co2", "bareme", "bareme_prix")
+    }
+
+
 class Gestionnaire(SimpleHTTPRequestHandler):
     def __init__(self, *arguments, **options):
         super().__init__(*arguments, directory=str(DOSSIER_FRONTEND), **options)
 
     def do_GET(self):
         adresse = urllib.parse.urlsplit(self.path)
-        if adresse.path != "/comparer":
+        if adresse.path == "/comparer":
+            # parse_qsl décode « depart=Paris&arrivee=Lyon » en {"depart": "Paris", "arrivee": "Lyon"}.
+            parametres = dict(urllib.parse.parse_qsl(adresse.query))
+            code, reponse = repondre_a_comparer(parametres, lire_env())
+        elif adresse.path == "/reference":
+            code, reponse = 200, lire_reference()
+        else:
             return super().do_GET()  # fichiers du site
 
-        # parse_qsl décode « depart=Paris&arrivee=Lyon » en {"depart": "Paris", "arrivee": "Lyon"}.
-        parametres = dict(urllib.parse.parse_qsl(adresse.query))
-        code, reponse = repondre_a_comparer(parametres, lire_env())
         corps = json.dumps(reponse, ensure_ascii=False, indent=1).encode("utf-8")
         self.send_response(code)
         self.send_header("Content-Type", "application/json; charset=utf-8")
