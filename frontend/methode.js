@@ -45,6 +45,12 @@ function listeDe(textes) {
 }
 
 function afficher(reference) {
+  // Date de récupération des facteurs sur l'API Impact CO2
+  const jour = new Date(`${reference.facteurs_emission.releve.date}T12:00:00`)
+    .toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
+  document.getElementById("date-facteurs").textContent = `Ils ont été récupérés le ${jour}.`;
+  document.getElementById("date-facteurs-sources").textContent = `récupérés le ${jour}`;
+
   // Facteurs d'émission
   const facteurs = reference.facteurs_emission.modes;
   const lignesFacteurs = [];

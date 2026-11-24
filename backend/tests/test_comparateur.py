@@ -6,6 +6,7 @@ import unittest
 from backend import serveur
 from backend.adaptateurs import aeroports, commun
 from backend.comparateur import ErreurDemande, comparer
+from backend.moteur_co2 import releve_des_facteurs
 from backend.tests.outils import LYON, PARIS, TestAdaptateur, ville_geocodee
 
 CLES = {"ORS_API_Key": "fausse-cle", "TIM_API_Key": "fausse-cle", "TRANSITOUS_CONTACT": "contact@exemple.fr"}
@@ -61,6 +62,13 @@ class TestComparer(TestAdaptateur):
                 self.assertIn(option["niveau"], "ABCDE")
                 self.assertTrue(option["source"]["co2"])
         json.dumps(resultat)  # tout doit pouvoir partir en JSON
+
+    def test_date_de_recuperation_des_facteurs_jointe_a_la_reponse(self):
+        # Le site l'affiche sur chaque carte, à côté du CO2.
+        self.simuler_sources(fausses_sources)
+        facteurs = comparer("Paris", "Lyon", DATE, CLES)["facteurs"]
+        self.assertEqual(facteurs, releve_des_facteurs())
+        self.assertRegex(facteurs["date"], r"^\d{4}-\d{2}-\d{2}$")
 
     def test_train_au_tarif_sncf(self):
         self.simuler_sources(fausses_sources)

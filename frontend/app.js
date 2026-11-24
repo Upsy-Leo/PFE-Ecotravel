@@ -76,6 +76,11 @@ function ecrireDate(date) {
   return jour.toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
 }
 
+// « 2026-11-24 » -> « 24 novembre 2026 »
+function ecrireJour(date) {
+  return new Date(`${date}T12:00:00`).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
+}
+
 // Une valeur est une estimation quand sa source est un barème ou un repli.
 function estEstimee(source) {
   return /barème|repli/i.test(source || "");
@@ -268,7 +273,7 @@ function construireValeur(nom, contenu) {
   return ligne;
 }
 
-function construireOption(option, badges) {
+function construireOption(option, badges, facteurs) {
   const mode = MODES[option.mode];
   const carte = creer("li", "carte option");
 
@@ -310,6 +315,10 @@ function construireOption(option, badges) {
   }
   if (estEstimee(option.source.co2)) {
     texteCo2.append(creer("span", "precision", "Estimation de repli."));
+  }
+  if (facteurs && /ADEME/.test(option.source.co2)) {
+    // Date à laquelle le facteur d'émission a été récupéré auprès de l'ADEME.
+    texteCo2.append(creer("span", "precision", `Facteur ADEME récupéré le ${ecrireJour(facteurs.date)}`));
   }
   if (option.co2_indicatif) {
     // Seconde estimation, par une autre méthode : affichée pour information seulement.
@@ -387,7 +396,7 @@ function afficherResultats(reponse) {
   }
 
   const liste = document.getElementById("options");
-  liste.replaceChildren(...options.map((option) => construireOption(option, badges[option.mode])));
+  liste.replaceChildren(...options.map((option) => construireOption(option, badges[option.mode], reponse.facteurs)));
 
   // Modes sans option : on le dit, avec la raison.
   const absents = Object.entries(reponse.sans_option || {});

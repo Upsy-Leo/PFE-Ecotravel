@@ -4,10 +4,13 @@ Lancement, depuis la racine du projet :
 
     python scripts/valider_sources.py
 
-Deux tests pour l'instant :
+Trois contrôles :
 
-    1. Travel Impact Model (Google) : émissions typiques d'un vol CDG-BKK.
+    1. Travel Impact Model (Google) : émissions typiques des vols de référence,
+       à 15 % près (valeur indicative sur le site).
     2. OpenRouteService : distance et durée de Paris-Lyon en voiture.
+    3. Impact CO2 (ADEME) : facteurs d'émission des quatre modes, comparés au
+       fichier local à 2 % près. S'ils ont changé : scripts/actualiser_facteurs.py.
 
 Si un test échoue, le script affiche la réponse brute de la source pour aider
 à comprendre (clé refusée, quota dépassé, mauvais format...).
@@ -24,6 +27,8 @@ from pathlib import Path
 RACINE = Path(__file__).parent.parent
 FICHIER_ENV = RACINE / ".env"
 FICHIER_REFERENCE = RACINE / "backend" / "donnees" / "trajets_reference.json"
+# Écart toléré entre l'API Impact CO2 et le fichier local des facteurs (2 %).
+TOLERANCE_IMPACT = 0.02
 
 # Méthode vérifiée le 2026-11-12 dans le document officiel de l'API :
 # https://travelimpactmodel.googleapis.com/$discovery/rest?version=v1
@@ -151,6 +156,50 @@ def tester_ors(cle):
     return True
 
 
+def tester_impact(cle):
+    """Impact CO2 (ADEME) : les facteurs de l'API sont-ils toujours ceux du fichier local ?
+
+    Le site lit le fichier local, pas l'API. Ce contrôle interroge l'API comme le fait
+    scripts/actualiser_facteurs.py, sans rien écrire, et compare à une tolérance près.
+    """
+    print("Impact CO2 (ADEME) : facteurs d'émission des quatre modes")
+    if not cle:
+        print("  ECHEC : la clé IMPACT_API_Key est absente du fichier .env")
+        return False
+
+    # Import fait ici : il charge le code du backend, dont les autres contrôles se passent.
+    import actualiser_facteurs as outil
+
+    facteurs = json.loads(outil.FICHIER_FACTEURS.read_text(encoding="utf-8"))
+    avec_construction = outil.charger_methode()["options_ademe"]["construction_des_vehicules"]
+    identifiants = [infos["id_impact_co2"] for infos in facteurs["modes"].values()]
+    try:
+        obtenus, _ = outil.actualiser(
+            facteurs,
+            lambda km, sans_trainees: outil.interroger(km, avec_construction, sans_trainees, identifiants, cle),
+            avec_construction,
+            facteurs["releve"]["date"],
+        )
+    except outil.commun.ErreurSource as erreur:
+        print("  ECHEC : l'API n'a pas donné tous les facteurs")
+        print("  Réponse brute :")
+        print(f"  {erreur}")
+        return False
+
+    tout_va_bien = True
+    for mode, infos in facteurs["modes"].items():
+        for tranche, obtenue in zip(infos["tranches"], obtenus["modes"][mode]["tranches"]):
+            local, api = tranche["facteur_g_pkm"], obtenue["facteur_g_pkm"]
+            dans_la_plage = abs(api - local) <= local * TOLERANCE_IMPACT
+            tout_va_bien = tout_va_bien and dans_la_plage
+            verdict = "OK" if dans_la_plage else "HORS TOLÉRANCE"
+            print(f"  {verdict} : {mode}, {obtenue['libelle']} : {api} g/passager·km (fichier local : {local})")
+    print(f"  Fichier local récupéré le {facteurs['releve']['date']}.")
+    if not tout_va_bien:
+        print("  Les facteurs ont changé à la source : lancer « python scripts/actualiser_facteurs.py ».")
+    return tout_va_bien
+
+
 def main():
     cles = lire_env()
     if not cles:
@@ -159,6 +208,7 @@ def main():
     resultats = [
         tester_tim(cles.get("TIM_API_Key")),
         tester_ors(cles.get("ORS_API_Key")),
+        tester_impact(cles.get("IMPACT_API_Key")),
     ]
 
     print()

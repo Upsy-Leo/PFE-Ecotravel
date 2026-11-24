@@ -52,6 +52,17 @@ def charger_facteurs(chemin=FICHIER_FACTEURS):
         return json.load(fichier)["modes"]
 
 
+def releve_des_facteurs(chemin=FICHIER_FACTEURS):
+    """Renvoie d'où et de quand viennent les facteurs : {"source": ..., "date": "2026-11-24"}.
+
+    La date est celle de la dernière récupération sur l'API Impact CO2
+    (scripts/actualiser_facteurs.py). Le site l'affiche à côté de chaque valeur de CO2.
+    """
+    with open(chemin, encoding="utf-8") as fichier:
+        releve = json.load(fichier)["releve"]
+    return {"source": releve["source"], "date": releve["date"]}
+
+
 def charger_niveaux(chemin=FICHIER_NIVEAUX):
     """Lit les seuils et renvoie la liste des niveaux, du moins au plus émetteur."""
     with open(chemin, encoding="utf-8") as fichier:

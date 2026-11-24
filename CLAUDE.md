@@ -52,7 +52,8 @@ Le prix, la durée et le CO₂ s'additionnent d'un segment à l'autre.
 - Niveaux provisoires (g CO₂e/passager·km) : A < 10, B 10–50, C 50–120, D 120–200, E > 200. **À garder en configuration, pas en dur.** Ils sont dans `backend/donnees/niveaux_co2.json`. Une valeur pile sur un seuil passe au niveau le plus émetteur (200 donne E).
 - Affichage : kg totaux + niveau A–E + part d'un budget carbone annuel (valeur de référence encore à sourcer). **La part du budget annuel n'est pas affichée** tant que l'équipe n'a pas fourni la valeur et sa source (étape 11).
 - Les facteurs d'émission doivent venir de la Base Empreinte ADEME et être **validés par l'équipe** avant d'être considérés comme définitifs. Ne pas inventer de facteur : mettre une valeur marquée « à valider » et le signaler.
-- État réel des facteurs (`backend/donnees/facteurs_emission.json`) : relevés à la main sur Impact CO2 le 10 novembre 2026, revérifiés avec la clé le 24 novembre (valeurs identiques). **Tous encore « à valider ».** L'étape 9 (appel à l'API) n'est pas faite.
+- État réel des facteurs (`backend/donnees/facteurs_emission.json`) : récupérés sur l'API Impact CO2 par `scripts/actualiser_facteurs.py`, qui réécrit le fichier avec la date de récupération (dernière : 24 novembre 2026). **Le site lit toujours ce fichier, jamais l'API.** La date s'affiche sur chaque carte et dans « Méthode et limites ». **Tous encore « à valider »** : récupéré ne veut pas dire validé par l'équipe.
+- Trains distingués par l'API (g/passager·km, relevé du 24 novembre 2026) : TGV 2,3 ; Intercités 5,8 ; RER ou Transilien 6,6 ; TER 22,9. Le site n'utilise que le TGV.
 - Options ADEME actives, les mêmes pour tous les modes (`methode.json`, `options_ademe`) : **construction des véhicules non comptée** ; **traînées de condensation de l'avion comptées** ; une personne par voiture ; TGV pour le train.
 - **À trancher en équipe : les traînées.** Le facteur ADEME de l'avion = carburant + traînées (224,2 g/km sur un vol court, dont 101 g de traînées, soit 45 %). C'est le réglage par défaut d'Impact CO2 et celui du code depuis le début, alors que le portfolio annonçait les exclure. Passer `trainees_de_condensation` à `false` les retire (Paris–Bangkok : 1 677 kg → 921 kg) ; il faut alors recalculer `trajets_reference.json`.
 - Les barèmes (`bareme.json`, `bareme_prix.json`) sont eux aussi « à valider » : calés sur très peu de trajets, souvent le seul Paris–Lyon.
@@ -61,7 +62,7 @@ Le prix, la durée et le CO₂ s'additionnent d'un segment à l'autre.
 
 | Besoin | Source | État au 24 novembre 2026 |
 |---|---|---|
-| CO₂ tous modes | API Impact CO2 (ADEME) ou facteurs embarqués en JSON | Facteurs embarqués en JSON (relevé manuel). Clé disponible : `IMPACT_API_Key`, **pas encore utilisée par le code** (étape 9) |
+| CO₂ tous modes | API Impact CO2 (ADEME) ou facteurs embarqués en JSON | Facteurs embarqués en JSON, rafraîchis à la main par `scripts/actualiser_facteurs.py` (clé `IMPACT_API_Key`). L'API accepte n'importe quelle clé sans le dire : une réponse correcte ne prouve pas que la clé est valide |
 | CO₂ vols | Travel Impact Model (Google) | Branché (`adaptateurs/tim.py`). Clé : `TIM_API_Key` |
 | Géocodage, distance et durée voiture | OpenRouteService | Branché (`adaptateurs/ors.py`). Clé : `ORS_API_Key` |
 | Durée train et bus | Transitous (API MOTIS) | Branché (`adaptateurs/transitous.py`). Contact : `TRANSITOUS_CONTACT`, envoyé dans le User-Agent ; sans lui, la source n'est pas interrogée. **Ne fournit pas la distance** : elle est estimée par barème |
@@ -141,7 +142,7 @@ La page « Méthode et limites » l'explique aux utilisateurs.
 
 ## Où en est le projet (24 novembre 2026)
 
-Les étapes 1 à 8 de `PLAN_SUITE.md` sont faites, ainsi qu'une étape 8 bis de corrections (menu de villes et choix entre homonymes, durée de vie du cache pour les réponses « rien trouvé », serveur qui ne se bloque plus) et **l'étape 10** (méthode de l'avion). **L'étape 9 (brancher l'API Impact CO2) n'est pas faite** : les facteurs restent ceux du fichier JSON.
+Les étapes 1 à 8 de `PLAN_SUITE.md` sont faites, ainsi qu'une étape 8 bis de corrections (menu de villes et choix entre homonymes, durée de vie du cache pour les réponses « rien trouvé », serveur qui ne se bloque plus) et **l'étape 10** (méthode de l'avion). **L'étape 9 est faite en version allégée** : un script récupère les facteurs sur l'API Impact CO2 et réécrit le fichier JSON ; le site continue de lire ce fichier (pas d'adaptateur `impact_co2.py`, pas d'appel à l'API pendant une recherche).
 
 Ce qui fonctionne : recherche d'un trajet, quatre modes, prix, durée, kg de CO₂e, niveau A–E, source de chaque valeur, page « Méthode et limites ».
 
@@ -192,7 +193,8 @@ frontend/
   methode.html, methode.js  # page « Méthode et limites », tableaux lus dans /reference
   style.css, polices/  # styles de la DA, police Manrope (licence OFL)
 scripts/
-  valider_sources.py   # interroge Travel Impact Model et OpenRouteService en réel
+  valider_sources.py   # contrôle en réel Travel Impact Model, OpenRouteService et Impact CO2
+  actualiser_facteurs.py  # récupère les facteurs sur l'API Impact CO2 et réécrit le fichier JSON
   preparer_aeroports.py  # réduit airports.csv d'OurAirports
 DA/                    # direction artistique (PDF)
 ```
@@ -202,12 +204,13 @@ DA/                    # direction artistique (PDF)
 ```
 python -m pytest backend/tests -q     # tous les tests, sans Internet
 python scripts/valider_sources.py     # vérifie les sources en réel
+python scripts/actualiser_facteurs.py # rafraîchit les facteurs ADEME (--essai : sans écrire)
 python -m backend.serveur             # site sur http://localhost:8000/
 ```
 
 ## Tâches
 
-Les quatre premières tâches (structure, moteur, validation des sources, écran de comparaison) sont faites. La suite est dans `PLAN_SUITE.md` : étapes restantes : 9 (brancher l'API Impact CO2), puis 11 à 15, **une étape à la fois**.
+Les quatre premières tâches (structure, moteur, validation des sources, écran de comparaison) sont faites. La suite est dans `PLAN_SUITE.md` : étapes restantes : 11 à 15, **une étape à la fois**.
 
 ## Façon de travailler
 

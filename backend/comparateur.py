@@ -15,6 +15,7 @@ import dataclasses
 from datetime import date as Date
 
 from backend.adaptateurs import aeroports, commun, ors, sncf, tim, transitous
+from backend.moteur_co2 import releve_des_facteurs
 
 AVERTISSEMENTS = [
     "La date ne sert qu'à la durée en train et en bus. Prix, CO2 et durées en voiture et en avion n'en dépendent pas.",
@@ -95,6 +96,8 @@ def comparer(depart, arrivee, date, cles, point_depart=None, point_arrivee=None)
         "options": [dataclasses.asdict(option) for option, _ in trouvees.values() if option is not None],
         # Modes sans option, avec la raison : le site doit le dire plutôt que de les cacher.
         "sans_option": {mode: raison for mode, (option, raison) in trouvees.items() if option is None},
+        # Source et date de récupération des facteurs d'émission ADEME, à afficher avec le CO2.
+        "facteurs": releve_des_facteurs(),
         "avertissements": AVERTISSEMENTS,
     }
 
