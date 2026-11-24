@@ -23,6 +23,7 @@ from pathlib import Path
 
 RACINE = Path(__file__).parent.parent
 FICHIER_ENV = RACINE / ".env"
+FICHIER_REFERENCE = RACINE / "backend" / "donnees" / "trajets_reference.json"
 
 # Méthode vérifiée le 2026-11-12 dans le document officiel de l'API :
 # https://travelimpactmodel.googleapis.com/$discovery/rest?version=v1
@@ -78,32 +79,50 @@ def afficher_echec(raison, code, texte):
 
 
 def tester_tim(cle):
-    """Travel Impact Model : émissions typiques du vol CDG-BKK."""
-    print("Travel Impact Model : vol CDG-BKK")
+    """Travel Impact Model : émissions typiques des trajets de référence, à une tolérance près."""
+    print("Travel Impact Model : trajets de référence en avion")
     if not cle:
         print("  ECHEC : la clé TIM_API_Key est absente du fichier .env")
         return False
 
+    # Les trajets de référence et la tolérance sont dans un fichier, pas dans ce script.
+    reference = json.loads(FICHIER_REFERENCE.read_text(encoding="utf-8"))
+    tolerance = reference["tolerances"]["tim"]
+    trajets = reference["trajets"]
+
     url = URL_TIM + "?key=" + urllib.parse.quote(cle)
-    corps = {"markets": [{"origin": "CDG", "destination": "BKK"}]}
+    corps = {"markets": [{"origin": t["origine"], "destination": t["destination"]} for t in trajets]}
     code, texte = envoyer_json(url, corps)
 
     if code != 200:
         afficher_echec("la source a refusé la requête", code, texte)
         return False
     try:
-        vol = json.loads(texte)["typicalFlightEmissions"][0]
-        grammes = vol["emissionsGramsPerPax"]["economy"]
+        vols = json.loads(texte)["typicalFlightEmissions"]
+        grammes = [vol["emissionsGramsPerPax"]["economy"] for vol in vols]
     except (ValueError, KeyError, IndexError):
         # La doc prévient : si le trajet est inconnu, la réponse arrive sans émissions.
-        afficher_echec("réponse reçue, mais sans émissions pour ce trajet", code, texte)
+        afficher_echec("réponse reçue, mais sans émissions pour un des trajets", code, texte)
         return False
 
-    version = json.loads(texte).get("modelVersion", {})
-    print(f"  OK : {grammes / 1000:.0f} kg CO2e par passager en classe économique")
-    print(f"  Toutes les classes (grammes) : {vol['emissionsGramsPerPax']}")
-    print(f"  Version du modèle : {version}")
-    return True
+    # Cette valeur n'est plus qu'indicative sur le site (le CO2 de l'avion est calculé
+    # avec les facteurs ADEME). On la contrôle quand même, avec une tolérance : elle
+    # change un peu d'un jour à l'autre, une valeur exacte casserait le contrôle.
+    tout_va_bien = True
+    for trajet, valeur in zip(trajets, grammes):
+        obtenu, attendu = valeur / 1000, trajet["co2_tim_kg"]
+        ecart = (obtenu - attendu) / attendu
+        dans_la_plage = abs(ecart) <= tolerance
+        tout_va_bien = tout_va_bien and dans_la_plage
+        verdict = "OK" if dans_la_plage else "HORS TOLÉRANCE"
+        print(f"  {verdict} : {trajet['nom']} ({trajet['origine']}-{trajet['destination']}) : {obtenu:.0f} kg, "
+              f"attendu {attendu:.0f} kg à {tolerance:.0%} près (écart {ecart:+.1%})")
+    if not tout_va_bien:
+        print("  Un écart hors tolérance signale un changement du modèle ou une erreur : à examiner.")
+        print("  Réponse brute :")
+        print(texte)
+    print(f"  Version du modèle : {json.loads(texte).get('modelVersion', {})}")
+    return tout_va_bien
 
 
 def tester_ors(cle):

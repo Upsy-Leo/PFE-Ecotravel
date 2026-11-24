@@ -6,30 +6,56 @@
     "source": "API Impact CO2 (ADEME)",
     "url": "https://impactco2.fr/api/v1/transport",
     "date": "2026-11-10",
-    "reglages": "Sans la construction des véhicules (includeConstruction=0, réglage par défaut de l'API), une personne par véhicule.",
-    "fourchettes": "Les bornes min et max viennent des ordres de grandeur ADEME cités dans le Portfolio (partie 1.3.2), sauf pour le bus (voir sa note)."
+    "reglages": "Sans la construction des véhicules (includeConstruction=0, réglage par défaut de l'API), une personne par véhicule. AVEC les traînées de condensation pour l'avion (réglage par défaut : ignoreRadiativeForcing absent).",
+    "fourchettes": "Les bornes min et max viennent des ordres de grandeur ADEME cités dans le Portfolio (partie 1.3.2), sauf pour le bus (voir sa note).",
+    "verification": "Revérifié le 2026-11-24 avec la clé IMPACT_API_Key : valeurs identiques pour les quatre modes. Décomposition de l'avion relevée le même jour : facteur = carburant + traînées de condensation (« dont_trainees_g_pkm »), d'après le code source d'Impact CO2 et un appel avec ignoreRadiativeForcing=1."
   },
   "modes": {
     "avion": {
       "tranches": [
-        { "jusqu_a_km": 1000, "facteur_g_pkm": 224.2, "libelle": "Avion trajet court" },
-        { "jusqu_a_km": 2000, "facteur_g_pkm": 184.3, "libelle": "Avion trajet moyen" },
-        { "jusqu_a_km": 5000, "facteur_g_pkm": 166.5, "libelle": "Avion trajet moyen à long" },
-        { "jusqu_a_km": null, "facteur_g_pkm": 177.6, "libelle": "Avion trajet long" }
+        {
+          "jusqu_a_km": 1000,
+          "facteur_g_pkm": 224.2,
+          "libelle": "Avion trajet court",
+          "dont_trainees_g_pkm": 101.0
+        },
+        {
+          "jusqu_a_km": 2000,
+          "facteur_g_pkm": 184.3,
+          "libelle": "Avion trajet moyen",
+          "dont_trainees_g_pkm": 83.0
+        },
+        {
+          "jusqu_a_km": 5000,
+          "facteur_g_pkm": 166.5,
+          "libelle": "Avion trajet moyen à long",
+          "dont_trainees_g_pkm": 75.0
+        },
+        {
+          "jusqu_a_km": null,
+          "facteur_g_pkm": 177.6,
+          "libelle": "Avion trajet long",
+          "dont_trainees_g_pkm": 80.0
+        }
       ],
       "min_g_pkm": 145,
       "max_g_pkm": 290,
       "source": "Impact CO2 (ADEME), relevé du 2026-11-10",
       "statut": "à valider",
       "a_verifier": [
-        "Ces facteurs incluent-ils les traînées de condensation ? Le projet prévoit de les exclure : à vérifier dans la Base Empreinte.",
+        "RÉPONSE TROUVÉE le 2026-11-24 : OUI, ces facteurs incluent les traînées de condensation (101 g sur 224,2 pour un vol court, soit 45 %). Le projet annonçait les exclure : à trancher en équipe. Le réglage est dans methode.json (« trainees_de_condensation »).",
         "Le facteur change d'un coup à 1 000, 2 000 et 5 000 km : un vol de 1 001 km ressort avec moins de CO2 qu'un vol de 1 000 km. C'est un effet connu des facteurs par tranche.",
-        "Fourchette 145 à 290 : ordre de grandeur du Portfolio, pas une incertitude officielle ADEME."
+        "Fourchette 145 à 290 : ordre de grandeur du Portfolio, pas une incertitude officielle ADEME.",
+        "Fourchette 145 à 290 : elle n'a de sens qu'avec les traînées. Sans elles, les facteurs (91,5 à 123,2) sont sous la borne basse : dans ce cas, aucune fourchette n'est affichée pour l'avion."
       ]
     },
     "train": {
       "tranches": [
-        { "jusqu_a_km": null, "facteur_g_pkm": 2.3, "libelle": "TGV" }
+        {
+          "jusqu_a_km": null,
+          "facteur_g_pkm": 2.3,
+          "libelle": "TGV"
+        }
       ],
       "min_g_pkm": 2,
       "max_g_pkm": 30,
@@ -43,7 +69,11 @@
     },
     "bus": {
       "tranches": [
-        { "jusqu_a_km": null, "facteur_g_pkm": 33.1, "libelle": "Autocar thermique" }
+        {
+          "jusqu_a_km": null,
+          "facteur_g_pkm": 33.1,
+          "libelle": "Autocar thermique"
+        }
       ],
       "min_g_pkm": 33.1,
       "max_g_pkm": 37.6,
@@ -56,7 +86,11 @@
     },
     "voiture": {
       "tranches": [
-        { "jusqu_a_km": null, "facteur_g_pkm": 110.6, "libelle": "Voiture thermique, une personne à bord" }
+        {
+          "jusqu_a_km": null,
+          "facteur_g_pkm": 110.6,
+          "libelle": "Voiture thermique, une personne à bord"
+        }
       ],
       "min_g_pkm": 100,
       "max_g_pkm": 220,

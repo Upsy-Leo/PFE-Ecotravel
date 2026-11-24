@@ -1,0 +1,41 @@
+{
+  "explication": "Trajets de référence en avion : ils servent à vérifier que le calcul ne dérive pas. Un contrôle compare la valeur obtenue à la valeur attendue, avec une tolérance (jamais une valeur exacte). Cette liste ne couvre que l'avion ; le jeu complet d'une dizaine de trajets, tous modes, est prévu à l'étape 13.",
+  "methode_controlee": "CO2 de l'avion par le calcul ADEME (distance × facteur Impact CO2), traînées de condensation incluses, sans construction. Si l'équipe change la méthode ou ce réglage dans methode.json, les valeurs « co2_ademe_kg » ci-dessous doivent être recalculées : le test échouera pour le rappeler.",
+  "releve_le": "2026-11-24",
+  "tolerances": {
+    "ademe": 0.02,
+    "explication_ademe": "2 % : le calcul est une multiplication, seule la distance entre aéroports peut bouger un peu.",
+    "tim": 0.15,
+    "explication_tim": "15 % : la valeur du Travel Impact Model change d'un jour à l'autre (CDG-BKK : 667 kg le 12 novembre 2026, 665 kg le 23, 665 kg le 24). Avec cette tolérance, le repère du portfolio (616 kg relevés sur Google Flights pour Paris-Bangkok) reste dans la plage."
+  },
+  "trajets": [
+    {
+      "nom": "Paris-Lyon",
+      "origine": "ORY",
+      "destination": "LYS",
+      "distance_km": 392,
+      "co2_ademe_kg": 87.9,
+      "niveau_attendu": "E",
+      "co2_tim_kg": 62.4
+    },
+    {
+      "nom": "Paris-Barcelone",
+      "origine": "ORY",
+      "destination": "BCN",
+      "distance_km": 827,
+      "co2_ademe_kg": 185.4,
+      "niveau_attendu": "E",
+      "co2_tim_kg": 84.9
+    },
+    {
+      "nom": "Paris-Bangkok",
+      "origine": "ORY",
+      "destination": "DMK",
+      "distance_km": 9441,
+      "co2_ademe_kg": 1676.7,
+      "niveau_attendu": "D",
+      "co2_tim_kg": 664.9,
+      "repere_externe": "Google Flights affichait 616 kg (relevé du portfolio) : 7 % sous la valeur du Travel Impact Model, donc dans la tolérance."
+    }
+  ]
+}

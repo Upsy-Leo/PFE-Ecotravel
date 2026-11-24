@@ -9,6 +9,7 @@ A à E sont lus dans deux fichiers du dossier « donnees/ ».
 
     donnees/facteurs_emission.json   facteurs par mode (provisoires, « à valider »)
     donnees/niveaux_co2.json         seuils des niveaux A à E (provisoires)
+    donnees/methode.json             choix de méthode de l'équipe (traînées de l'avion...)
 
 Exemple :
 
@@ -25,6 +26,7 @@ from pathlib import Path
 DOSSIER_DONNEES = Path(__file__).parent / "donnees"
 FICHIER_FACTEURS = DOSSIER_DONNEES / "facteurs_emission.json"
 FICHIER_NIVEAUX = DOSSIER_DONNEES / "niveaux_co2.json"
+FICHIER_METHODE = DOSSIER_DONNEES / "methode.json"
 
 
 @dataclass(frozen=True)
@@ -39,7 +41,7 @@ class ResultatCO2:
     co2_kg: float  # émissions totales par passager
     intensite_g_pkm: float  # g CO2e par passager·km
     niveau: str  # lettre A à E
-    incertitude_kg: tuple[float, float]  # (CO2 minimum, CO2 maximum)
+    incertitude_kg: tuple[float, float] | None  # (CO2 minimum, CO2 maximum), None si inconnue
     source: str  # d'où vient le facteur utilisé
     statut: str  # « à valider » tant que l'équipe n'a pas validé le facteur
 
@@ -83,18 +85,28 @@ def trouver_tranche(tranches, distance_km):
     raise ValueError("La liste des tranches doit se terminer par une tranche sans limite (null).")
 
 
-def calculer_co2(mode, distance_km, facteurs=None, niveaux=None):
+def charger_methode(chemin=FICHIER_METHODE):
+    """Lit les choix de méthode de l'équipe (methode.json)."""
+    with open(chemin, encoding="utf-8") as fichier:
+        return json.load(fichier)
+
+
+def calculer_co2(mode, distance_km, facteurs=None, niveaux=None, avec_trainees=None):
     """Calcule le CO2 d'un trajet pour un mode et une distance.
 
-    mode         « avion », « train », « bus » ou « voiture »
-    distance_km  distance du segment, en kilomètres
-    facteurs     facultatif : facteurs à utiliser à la place du fichier (utile pour les tests)
-    niveaux      facultatif : niveaux à utiliser à la place du fichier (utile pour les tests)
+    mode           « avion », « train », « bus » ou « voiture »
+    distance_km    distance du segment, en kilomètres
+    facteurs       facultatif : facteurs à utiliser à la place du fichier (utile pour les tests)
+    niveaux        facultatif : niveaux à utiliser à la place du fichier (utile pour les tests)
+    avec_trainees  facultatif : compter ou non les traînées de condensation de l'avion.
+                   Par défaut, c'est le réglage de methode.json. Sans effet sur les autres modes.
     """
     if facteurs is None:
         facteurs = charger_facteurs()
     if niveaux is None:
         niveaux = charger_niveaux()
+    if avec_trainees is None:
+        avec_trainees = charger_methode()["options_ademe"]["trainees_de_condensation"]
 
     if mode not in facteurs:
         modes_connus = ", ".join(sorted(facteurs))
@@ -105,20 +117,28 @@ def calculer_co2(mode, distance_km, facteurs=None, niveaux=None):
     infos = facteurs[mode]
     tranche = trouver_tranche(infos["tranches"], distance_km)
     facteur = tranche["facteur_g_pkm"]
+    libelle = tranche["libelle"]
+    incertitude_kg = (distance_km * infos["min_g_pkm"] / 1000, distance_km * infos["max_g_pkm"] / 1000)
 
-    # On divise par 1000 pour passer des grammes aux kilogrammes.
-    co2_kg = distance_km * facteur / 1000
-    co2_min_kg = distance_km * infos["min_g_pkm"] / 1000
-    co2_max_kg = distance_km * infos["max_g_pkm"] / 1000
+    # Seul l'avion a une part « traînées de condensation » dans son facteur.
+    part_trainees = tranche.get("dont_trainees_g_pkm")
+    if part_trainees is not None:
+        if avec_trainees:
+            libelle += ", traînées de condensation incluses"
+        else:
+            facteur = round(facteur - part_trainees, 3)  # arrondi : évite 123,19999 au lieu de 123,2
+            libelle += ", sans les traînées de condensation"
+            incertitude_kg = None  # la fourchette du fichier n'a de sens qu'avec les traînées
 
     return ResultatCO2(
         mode=mode,
         distance_km=distance_km,
-        co2_kg=co2_kg,
+        # On divise par 1000 pour passer des grammes aux kilogrammes.
+        co2_kg=distance_km * facteur / 1000,
         # Avec un facteur fixe, l'intensité est le facteur lui-même.
         intensite_g_pkm=facteur,
         niveau=trouver_niveau(facteur, niveaux),
-        incertitude_kg=(co2_min_kg, co2_max_kg),
-        source=f"{infos['source']} : {tranche['libelle']}",
+        incertitude_kg=incertitude_kg,
+        source=f"{infos['source']} : {libelle}",
         statut=infos["statut"],
     )

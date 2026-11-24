@@ -31,11 +31,19 @@ class ErreurDemande(Exception):
         self.code = code
 
 
-def comparer(depart, arrivee, date, cles):
+def comparer(depart, arrivee, date, cles, point_depart=None, point_arrivee=None):
     """Renvoie les options de transport entre deux villes pour un jour donné.
 
-    depart, arrivee  noms de villes, par exemple « Paris »
+    depart, arrivee  noms de villes, par exemple « Paris » ou « Brest, Finistère, France »
     date             jour du voyage, au format « 2026-12-01 »
+    point_depart, point_arrivee
+                     position « longitude,latitude » de la ville, quand l'utilisateur
+                     l'a choisie dans une liste proposée par le site. Elle évite toute
+                     ambiguïté, et un appel au géocodage.
+
+    Sans position, la ville est cherchée par son nom. Si ce nom désigne plusieurs
+    villes, la fonction ne compare rien : elle renvoie
+    {"a_preciser": {"depart": [lieux…]}} pour que le site pose la question.
     """
     depart, arrivee, date = (depart or "").strip(), (arrivee or "").strip(), (date or "").strip()
     if not depart or not arrivee or not date:
@@ -51,8 +59,16 @@ def comparer(depart, arrivee, date, cles):
     if not cle_ors:
         raise ErreurDemande(503, "La clé ORS_API_Key manque dans le fichier .env : impossible de situer les villes.")
 
-    lieu_depart = _situer(depart, cle_ors)
-    lieu_arrivee = _situer(arrivee, cle_ors)
+    lieu_depart, homonymes_depart = _situer(depart, cle_ors, point_depart)
+    lieu_arrivee, homonymes_arrivee = _situer(arrivee, cle_ors, point_arrivee)
+    a_preciser = {}
+    if lieu_depart is None:
+        a_preciser["depart"] = homonymes_depart
+    if lieu_arrivee is None:
+        a_preciser["arrivee"] = homonymes_arrivee
+    if a_preciser:
+        return {"a_preciser": a_preciser, "date": date}
+
     a = [lieu_depart["lon"], lieu_depart["lat"]]
     b = [lieu_arrivee["lon"], lieu_arrivee["lat"]]
     if commun.distance_vol_oiseau_km(a, b) < 1:
@@ -60,8 +76,7 @@ def comparer(depart, arrivee, date, cles):
 
     contact = cles.get("TRANSITOUS_CONTACT")
     train = transitous.option_train(a, b, contact, date)
-    # Le nom renvoyé par le géocodage ressemble à « Lyon, France » : on garde la ville.
-    train = sncf.appliquer_tarif(train, lieu_depart["nom"].split(",")[0], lieu_arrivee["nom"].split(",")[0])
+    train = sncf.appliquer_tarif(train, lieu_depart["ville"], lieu_arrivee["ville"])
     avion, raison_avion = _option_avion(a, b, cles.get("TIM_API_Key", ""))
 
     trouvees = {
@@ -84,24 +99,45 @@ def comparer(depart, arrivee, date, cles):
     }
 
 
-def _situer(ville, cle_ors):
-    lieu = ors.geocoder(ville, cle_ors)
-    if lieu is None:
-        raise ErreurDemande(404, f"Ville introuvable, ou service de géocodage indisponible : « {ville} ».")
-    return lieu
+def _lire_point(texte):
+    """Lit « longitude,latitude ». Renvoie [lon, lat], ou None si le texte n'est pas une position valable."""
+    try:
+        lon, lat = (float(morceau) for morceau in (texte or "").split(","))
+    except ValueError:
+        return None
+    return [lon, lat] if -180 <= lon <= 180 and -90 <= lat <= 90 else None
+
+
+def _situer(ville, cle_ors, point):
+    """Renvoie (lieu, None) si la ville est connue sans ambiguïté, sinon (None, homonymes)."""
+    position = _lire_point(point)
+    if position:
+        # L'utilisateur a choisi cette ville dans une liste : son nom complet est dans « ville ».
+        return {
+            "nom": ville,
+            "ville": ville.split(",")[0].strip(),
+            "lon": position[0],
+            "lat": position[1],
+            "source": "OpenRouteService (ville choisie dans la liste proposée)",
+        }, None
+
+    lieux = ors.chercher_lieux(ville, cle_ors)
+    if lieux is None:
+        raise ErreurDemande(503, "Le service qui situe les villes ne répond pas. Réessayez dans un moment.")
+    if not lieux:
+        raise ErreurDemande(404, f"Ville introuvable : « {ville} ». Vérifiez l'orthographe.")
+    if len(lieux) == 1:
+        return lieux[0], None
+    # Plusieurs villes de ce nom et aucun choix : on demande au lieu de garder la première.
+    return None, lieux
 
 
 def _option_avion(a, b, cle_tim):
     """Renvoie (option, None), ou (None, raison) s'il n'y a pas de vol à proposer.
 
-    Chaque ville peut avoir deux aéroports (Paris : Orly et Roissy). On essaie les
-    paires d'aéroports, des plus proches des villes aux plus éloignées, et on garde
-    la première que Travel Impact Model connaît. Si aucune n'est connue, on garde la
-    paire la plus proche avec le facteur ADEME.
-
-    Attention : « connue » ne prouve pas qu'un vol direct existe entre ces deux
-    aéroports précis. Constaté le 2026-11-12 : Orly–Don Mueang reçoit exactement
-    la même valeur que Roissy–Suvarnabhumi (la source semble raisonner par ville).
+    On retient l'aéroport le plus proche de chaque ville (Orly pour Paris). Ce choix
+    ne sert qu'à mesurer la distance du vol : aucune de nos sources ne dit entre quels
+    aéroports un vol direct existe, et l'option le signale (voir tim.REMARQUE_VOL_DIRECT).
     """
     paires = [
         (origine, destination)
@@ -111,13 +147,8 @@ def _option_avion(a, b, cle_tim):
     ]
     if not paires:
         return None, "Pas d'aéroport à moins de 100 km d'une des deux villes, ou même aéroport pour les deux."
-    paires.sort(key=lambda paire: paire[0]["eloignement_km"] + paire[1]["eloignement_km"])
-
-    premiere = None
-    for origine, destination in paires:
-        distance_km = commun.distance_vol_oiseau_km(origine["point"], destination["point"])
-        option = tim.option_vol(origine["iata"], destination["iata"], distance_km, cle_tim)
-        if tim.connait_le_trajet(option):
-            return option, None
-        premiere = premiere or option
-    return premiere, None
+    origine, destination = min(
+        paires, key=lambda paire: paire[0]["eloignement_km"] + paire[1]["eloignement_km"]
+    )
+    distance_km = commun.distance_vol_oiseau_km(origine["point"], destination["point"])
+    return tim.option_vol(origine["iata"], destination["iata"], distance_km, cle_tim), None

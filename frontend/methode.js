@@ -66,6 +66,28 @@ function afficher(reference) {
   remplir("tableau-facteurs", lignesFacteurs);
   remplir("facteurs-a-verifier", listeDe(aVerifier));
 
+  // Réglages actifs du calcul ADEME et méthode de l'avion : lus dans methode.json.
+  const methode = reference.methode;
+  const options = methode.options_ademe;
+  remplir("options-ademe", listeDe([
+    options.construction_des_vehicules
+      ? "la fabrication des véhicules est comptée ;"
+      : "la fabrication des véhicules n'est pas comptée ;",
+    options.trainees_de_condensation
+      ? "les traînées de condensation de l'avion sont comptées."
+      : "les traînées de condensation de l'avion ne sont pas comptées.",
+  ]));
+  document.getElementById("methode-avion-active").textContent =
+    methode.co2_avion.methodes_possibles[methode.co2_avion.methode];
+
+  // Vols de référence : les deux estimations côte à côte.
+  remplir("tableau-reference", reference.trajets_reference.trajets.map((trajet) => ligne([
+    `${trajet.nom} (${trajet.origine}–${trajet.destination})`,
+    `${nombre(trajet.distance_km)} km`,
+    `${nombre(Math.round(trajet.co2_ademe_kg))} kg (niveau ${trajet.niveau_attendu})`,
+    `${nombre(Math.round(trajet.co2_tim_kg))} kg`,
+  ])));
+
   // Niveaux A à E
   const niveaux = reference.niveaux_co2.niveaux;
   remplir("tableau-niveaux", niveaux.map((niveau, rang) => {
@@ -85,7 +107,7 @@ function afficher(reference) {
   ])));
   const avion = bareme.modes.avion;
   remplir("hypotheses-avion", listeDe([
-    `Valeurs utilisées : ${nombre(avion.temps_aeroport_min)} min d'aéroport, ${nombre(avion.temps_decollage_atterrissage_min)} min de décollage et d'atterrissage, ${nombre(avion.vitesse_km_h)} km/h en vol.`,
+    `Valeurs utilisées : ${nombre(avion.temps_acces_aeroport_min)} min pour aller à l'aéroport et autant pour en revenir, ${nombre(avion.temps_aeroport_min)} min d'aéroport, ${nombre(avion.temps_decollage_atterrissage_min)} min de décollage et d'atterrissage, ${nombre(avion.vitesse_km_h)} km/h en vol.`,
     ...bareme.duree_avion.hypotheses,
   ]));
 

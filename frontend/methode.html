@@ -43,7 +43,7 @@
           <li><a href="#perimetre">Ce que le site compare</a></li>
           <li><a href="#co2">Le CO₂</a></li>
           <li><a href="#niveaux">Les niveaux A à E</a></li>
-          <li><a href="#ecart">L'avion : deux méthodes, deux résultats</a></li>
+          <li><a href="#ecart">L'avion : méthode retenue et écart avec Google Flights</a></li>
           <li><a href="#durees">Les durées</a></li>
           <li><a href="#prix">Les prix</a></li>
           <li><a href="#fiabilite">Provenance et repli</a></li>
@@ -60,7 +60,11 @@
       <h2 id="co2">Le CO₂</h2>
       <p>La même formule sert pour tous les modes :</p>
       <p><strong>CO₂e (kg) = distance (km) × facteur d'émission (g par passager et par km) ÷ 1 000</strong></p>
-      <p>Les facteurs viennent d'Impact CO2, le service de l'ADEME. Ils ne comptent pas la fabrication des véhicules.</p>
+      <p>Les facteurs viennent d'Impact CO2, le service de l'ADEME. Les mêmes réglages s'appliquent à tous les modes :</p>
+      <ul id="options-ademe" class="liste">
+        <li>la fabrication des véhicules n'est pas comptée ;</li>
+        <li>les traînées de condensation de l'avion sont comptées.</li>
+      </ul>
       <div class="cadre-tableau" tabindex="0" role="region" aria-labelledby="legende-facteurs">
         <table>
           <caption id="legende-facteurs">Facteurs d'émission utilisés</caption>
@@ -70,8 +74,8 @@
       </div>
       <h3>Points encore à vérifier sur ces facteurs</h3>
       <ul id="facteurs-a-verifier" class="liste"></ul>
-      <p><strong>Pour l'avion</strong>, le site interroge d'abord le Travel Impact Model de Google, qui donne les émissions typiques d'un vol entre deux aéroports, en classe économique. S'il ne répond pas ou ne connaît pas le trajet, le calcul se replie sur le facteur ADEME, et la source affichée le dit.</p>
-      <p>La fourchette affichée sous les kg (« entre … et … ») applique à la même distance le facteur le plus bas et le plus haut du tableau. Le Travel Impact Model ne fournit pas de fourchette.</p>
+      <p><strong>L'avion est calculé comme les autres modes</strong>, avec le facteur ADEME et la distance à vol d'oiseau entre les deux aéroports. Son facteur additionne deux parts : le carburant et les traînées de condensation. La valeur du Travel Impact Model de Google est affichée à côté, à titre indicatif (voir <a href="#ecart">plus bas</a>).</p>
+      <p>La fourchette affichée sous les kg (« entre … et … ») applique à la même distance le facteur le plus bas et le plus haut du tableau.</p>
 
       <h2 id="niveaux">Les niveaux A à E</h2>
       <p>La lettre ne dépend pas de la longueur du trajet, mais de son <strong>intensité</strong> : les grammes de CO₂e émis par personne et par kilomètre. Elle est toujours écrite en toutes lettres, jamais donnée par la couleur seule.</p>
@@ -84,21 +88,40 @@
       </div>
       <p>Ces seuils sont un choix de l'équipe, pas une norme officielle. Le site n'affiche pas encore la part d'un budget carbone annuel : la valeur de référence n'est pas encore sourcée.</p>
 
-      <h2 id="ecart">L'avion : deux méthodes, deux résultats</h2>
+      <h2 id="ecart">L'avion : méthode retenue et écart avec Google Flights</h2>
       <div class="note">
-        <p><strong>Point de méthode non tranché.</strong> Le Travel Impact Model et les facteurs ADEME ne donnent pas du tout le même résultat pour un même vol.</p>
+        <p><strong>Méthode retenue par l'équipe le 24 novembre 2026.</strong> <span id="methode-avion-active">Le CO₂ de l'avion est calculé avec les facteurs ADEME, comme celui du train, du car et de la voiture.</span> La valeur du Travel Impact Model reste affichée sur la carte « Avion », avec sa source, mais elle ne sert ni au niveau A–E ni au classement.</p>
       </div>
-      <p>Exemple relevé le 12 novembre 2026 pour Paris–Bangkok (environ 9 450 km) : le Travel Impact Model donne 667 kg de CO₂e par passager, soit environ 71 g par km (niveau C). Le facteur ADEME du site donnerait environ 1 680 kg, soit 178 g par km (niveau D).</p>
-      <p>Comme les autres modes sont calculés avec les facteurs ADEME, utiliser le Travel Impact Model pour les vols <strong>peut avantager l'avion</strong> dans la comparaison. L'équipe n'a pas encore choisi entre garder les deux sources, tout calculer avec l'ADEME, ou afficher les deux valeurs. En attendant, la source de chaque valeur est indiquée sur chaque option.</p>
+      <h3>Pourquoi ce choix</h3>
+      <p>Pour comparer, il faut mesurer tout le monde avec la même règle. Le site utilisait d'abord le Travel Impact Model pour l'avion et l'ADEME pour le reste. L'avion ressortait alors deux à trois fois plus bas qu'avec le calcul ADEME, et parfois sous la voiture : sur Paris–Barcelone, 85 kg en avion contre 115 kg en voiture. Avec une seule méthode, l'écart entre les modes ne dépend plus de la source choisie.</p>
+      <h3>Les deux valeurs sur trois trajets</h3>
+      <div class="cadre-tableau" tabindex="0" role="region" aria-labelledby="legende-reference">
+        <table>
+          <caption id="legende-reference">Vols de référence, par passager, aller simple (relevé du 24 novembre 2026)</caption>
+          <thead><tr><th scope="col">Trajet</th><th scope="col">Distance</th><th scope="col">Calcul ADEME (retenu)</th><th scope="col">Travel Impact Model (indicatif)</th></tr></thead>
+          <tbody id="tableau-reference"><tr><td colspan="4">Chargement…</td></tr></tbody>
+        </table>
+      </div>
+      <h3>Pourquoi Google Flights affiche moins</h3>
+      <p>Google Flights utilise le Travel Impact Model. Pour Paris–Bangkok, il affichait 616 kg quand le portfolio a été écrit, et le modèle renvoie aujourd'hui environ 665 kg. Notre calcul donne environ 1 680 kg. Trois raisons expliquent l'écart :</p>
+      <ol class="liste">
+        <li><strong>Les traînées de condensation.</strong> Ce sont les traînées blanches derrière les avions : elles réchauffent le climat en plus du CO₂ du carburant. Le facteur ADEME les compte, et elles pèsent 45 % du total (environ 755 kg sur les 1 680 kg de Paris–Bangkok). Le Travel Impact Model ne les compte pas dans ses kilogrammes : sa documentation indique qu'elles ne sont « pas encore incluses ».</li>
+        <li><strong>Un avion moyen contre un avion précis.</strong> L'ADEME donne un facteur moyen par longueur de vol. Le Travel Impact Model part des avions réellement utilisés sur la ligne, de leur nombre de sièges, de leur remplissage et de la part du fret. Sans les traînées, notre calcul donnerait encore environ 920 kg, contre 665 kg.</li>
+        <li><strong>Une valeur « typique ».</strong> Le Travel Impact Model résume en un chiffre les vols directs et avec escale d'un trajet, aéroports voisins compris. Ce n'est pas la valeur d'un vol donné.</li>
+      </ol>
+      <p>Aucune des deux valeurs n'est « la » vérité : ce sont deux périmètres. Le site retient celui qui est le même pour tous les modes, et montre l'autre.</p>
+      <div class="note">
+        <p><strong>Point encore à trancher.</strong> Le projet avait annoncé qu'il ne compterait pas les traînées de condensation. Or le facteur ADEME les compte par défaut, et c'est le réglage actif. Les retirer ferait passer Paris–Bangkok d'environ 1 680 kg à 920 kg. Le réglage est dans la configuration du site.</p>
+      </div>
 
       <h2 id="durees">Les durées</h2>
       <ul class="liste">
         <li><strong>Voiture</strong> : durée de l'itinéraire calculé par OpenRouteService, sans pause ni embouteillage.</li>
         <li><strong>Train et car</strong> : trajet le plus rapide trouvé par Transitous parmi les départs du jour demandé entre 5 h et 17 h (heure universelle), de centre-ville à centre-ville, correspondances et accès à la gare compris. C'est une durée typique, pas un horaire.</li>
-        <li><strong>Avion</strong> : estimation par formule, détaillée ci-dessous.</li>
+        <li><strong>Avion</strong> : estimation par formule, de centre à centre, détaillée ci-dessous.</li>
       </ul>
       <h3>Durée d'un vol</h3>
-      <p><strong>Durée = temps d'aéroport + temps de décollage et d'atterrissage + distance ÷ vitesse en vol.</strong> La distance est celle à vol d'oiseau entre les deux aéroports.</p>
+      <p><strong>Durée = trajet vers l'aéroport + temps d'aéroport + temps de décollage et d'atterrissage + distance ÷ vitesse en vol + trajet depuis l'aéroport.</strong> La distance est celle à vol d'oiseau entre les deux aéroports.</p>
       <ul id="hypotheses-avion" class="liste"></ul>
       <h3>Quand une source ne répond pas</h3>
       <p>Sans réponse d'une source et sans rien en mémoire, la distance et la durée sont estimées : distance = distance à vol d'oiseau × coefficient de détour ; durée = distance ÷ vitesse moyenne.</p>
@@ -137,11 +160,11 @@
       </ol>
 
       <h2 id="exclusions">Ce qui n'est pas compté</h2>
+      <p>Les traînées de condensation de l'avion, elles, <strong>sont comptées</strong> : voir <a href="#ecart">la méthode retenue pour l'avion</a>.</p>
       <ul class="liste">
-        <li><strong>Les traînées de condensation</strong> et les autres effets de l'avion hors CO₂. Le projet a choisi de les exclure ; il reste à vérifier que les facteurs ADEME utilisés les excluent bien.</li>
         <li><strong>La fabrication</strong> des véhicules et la construction des infrastructures.</li>
         <li><strong>L'hébergement</strong> et les activités sur place.</li>
-        <li><strong>Les trajets d'approche</strong> : aller à l'aéroport ou en revenir n'est compté ni dans la durée, ni dans le prix, ni dans le CO₂ de l'avion.</li>
+        <li><strong>Les trajets d'approche</strong> : aller à l'aéroport ou en revenir est compté dans la durée de l'avion (un forfait), mais ni dans son prix ni dans son CO₂.</li>
         <li><strong>Le retour</strong> : tout est calculé pour un aller simple.</li>
         <li><strong>Le covoiturage</strong> : la voiture est comptée avec une seule personne à bord, qui paie tout et porte toutes les émissions.</li>
         <li>Pour la voiture : l'usure, l'assurance, le stationnement. Pour l'avion : les bagages en soute.</li>
@@ -151,8 +174,9 @@
       <ul class="liste">
         <li><strong>Un seul trajet à la fois</strong>, sans étape, pour une seule personne.</li>
         <li><strong>La date</strong> ne sert qu'à la durée en train et en car. Une date lointaine, pour laquelle les horaires ne sont pas publiés, peut donner « aucun trajet ».</li>
-        <li><strong>La durée de l'avion avantage l'avion</strong> : elle ne compte pas le trajet entre la ville et l'aéroport, alors que le train et le car sont comptés de centre à centre.</li>
-        <li><strong>Le choix des aéroports</strong> : les deux grands aéroports les plus proches de chaque ville, à moins de 100 km. Le vol est supposé direct, même si aucun vol direct n'existe.</li>
+        <li><strong>Vol direct non vérifié</strong> : aucune de nos sources ne dit si un vol direct relie deux aéroports. La durée et le prix de l'avion sont ceux d'un vol direct ; avec une escale, il faut compter davantage. La carte « Avion » le rappelle.</li>
+        <li><strong>Le choix des aéroports</strong> : le grand aéroport le plus proche de chaque ville, à moins de 100 km. Il ne sert qu'à mesurer la distance du vol.</li>
+        <li><strong>Le trajet vers l'aéroport</strong> est le même forfait pour tous les aéroports, qu'ils soient à 15 ou à 70 km de la ville.</li>
         <li><strong>Le train hors de France</strong> : le facteur d'émission est celui d'un TGV français, et le prix vient du barème. Les deux peuvent être loin de la réalité à l'étranger.</li>
         <li><strong>Les barèmes</strong> de durée et de prix sont calés sur très peu de trajets (souvent le seul Paris–Lyon).</li>
         <li><strong>En cas de panne d'une source</strong>, le barème peut proposer un train ou un car là où il n'en existe pas : il ne sait pas si le trajet est réellement desservi.</li>

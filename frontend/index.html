@@ -44,13 +44,17 @@
         <div class="champ">
           <label for="depart">Départ</label>
           <input id="depart" name="depart" type="text" autocomplete="off" required
-                 placeholder="Ville, par exemple Paris" aria-describedby="erreur-depart">
+                 placeholder="Ville, par exemple Paris" list="propositions-depart"
+                 aria-describedby="aide-villes erreur-depart">
+          <datalist id="propositions-depart"></datalist>
           <p id="erreur-depart" class="message-erreur" hidden></p>
         </div>
         <div class="champ">
           <label for="arrivee">Arrivée</label>
           <input id="arrivee" name="arrivee" type="text" autocomplete="off" required
-                 placeholder="Ville, par exemple Lyon" aria-describedby="erreur-arrivee">
+                 placeholder="Ville, par exemple Lyon" list="propositions-arrivee"
+                 aria-describedby="aide-villes erreur-arrivee">
+          <datalist id="propositions-arrivee"></datalist>
           <p id="erreur-arrivee" class="message-erreur" hidden></p>
         </div>
         <div class="champ">
@@ -59,10 +63,13 @@
           <p id="erreur-date" class="message-erreur" hidden></p>
         </div>
       </div>
+      <!-- Rempli par app.js quand plusieurs villes portent le même nom : l'utilisateur choisit. -->
+      <div id="choix-lieux" class="choix-lieux"></div>
       <button type="submit" class="bouton bouton-principal">
         Comparer
         <svg aria-hidden="true" width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10h12M11 5l5 5-5 5"/></svg>
       </button>
+      <p id="aide-villes" class="aide">Tapez au moins trois lettres : des villes vous sont proposées, avec leur région et leur pays.</p>
       <p class="aide">Un seul trajet, pour une personne, en aller simple.</p>
     </form>
 

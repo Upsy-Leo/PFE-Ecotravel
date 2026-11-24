@@ -1,0 +1,19 @@
+{
+  "explication": "Choix de méthode du calcul du CO2. Les changer ici suffit : aucun code à modifier. La page « Méthode et limites » lit ce fichier.",
+  "co2_avion": {
+    "methode": "ademe",
+    "methodes_possibles": {
+      "ademe": "Distance × facteur ADEME (Impact CO2), comme pour le train, le car et la voiture. La valeur du Travel Impact Model est affichée à titre indicatif.",
+      "tim": "Valeur du Travel Impact Model (Google). Le calcul ADEME est affiché à titre indicatif, et sert de repli si la source ne répond pas."
+    },
+    "decision": "Décision de l'équipe du 2026-11-24 : méthode « ademe ».",
+    "raison": "Comparaison homogène : les quatre modes sont calculés avec la même formule et la même source de facteurs. Avec le Travel Impact Model pour le seul avion, l'avion ressortait deux à trois fois plus bas que par le calcul ADEME, et parfois sous la voiture.",
+    "valeur_indicative": "La valeur de l'autre méthode est affichée avec sa source. Elle ne sert ni au niveau A-E, ni au classement, ni aux totaux."
+  },
+  "options_ademe": {
+    "explication": "Réglages du calcul ADEME, les mêmes pour tous les modes. Vérifiés le 2026-11-24 sur l'API Impact CO2 (paramètres includeConstruction et ignoreRadiativeForcing) et dans son code source.",
+    "construction_des_vehicules": false,
+    "trainees_de_condensation": true,
+    "a_decider": "ATTENTION, À TRANCHER EN ÉQUIPE : les facteurs ADEME de l'avion INCLUENT les traînées de condensation (réglage par défaut d'Impact CO2), alors que le portfolio et CLAUDE.md annonçaient qu'elles étaient exclues. Elles pèsent 45 % du facteur de l'avion. Passer « trainees_de_condensation » à false les retire du calcul. La valeur active n'a pas été changée : c'est celle utilisée depuis le début du projet."
+  }
+}

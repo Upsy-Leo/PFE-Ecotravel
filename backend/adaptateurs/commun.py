@@ -11,6 +11,7 @@
 
 import json
 import math
+import threading
 import urllib.error
 import urllib.request
 from datetime import datetime, timedelta, timezone
@@ -28,6 +29,11 @@ FICHIER_CACHE = DOSSIER_BACKEND / "cache" / "reponses.json"
 # Tant qu'une réponse en cache est plus récente que ça, on ne réinterroge pas la source
 # (cela économise les quotas). Au-delà, on réinterroge, et le cache ne sert que de secours.
 FRAICHEUR_CACHE_JOURS = 30
+# Une réponse « rien trouvé » (pas de trajet ce jour-là, pas de route, ville inconnue)
+# peut devenir fausse vite : horaires publiés entre-temps, faute de frappe corrigée...
+# On ne la garde donc que le temps d'éviter de reposer la même question plusieurs
+# fois de suite. Choix de conception, à ajuster (0 = ne jamais la garder).
+FRAICHEUR_ABSENCE_HEURES = 24
 
 
 class ErreurSource(Exception):
@@ -71,28 +77,39 @@ def appeler_json(url, corps=None, entetes=None):
 # --- Cache ---
 
 
+# Le serveur traite plusieurs demandes en même temps. Ce verrou garantit qu'une seule
+# à la fois lit ou réécrit le fichier de cache : sans lui, deux écritures simultanées
+# pourraient se marcher dessus et perdre des réponses.
+_VERROU_CACHE = threading.RLock()
+
+
 def _lire_cache():
-    if not FICHIER_CACHE.exists():
-        return {}
-    try:
-        return json.loads(FICHIER_CACHE.read_text(encoding="utf-8"))
-    except ValueError:
-        return {}  # fichier abîmé : on repart d'un cache vide
+    with _VERROU_CACHE:
+        if not FICHIER_CACHE.exists():
+            return {}
+        try:
+            return json.loads(FICHIER_CACHE.read_text(encoding="utf-8"))
+        except ValueError:
+            return {}  # fichier abîmé : on repart d'un cache vide
 
 
 def _ecrire_cache(cle_cache, donnees):
-    cache = _lire_cache()
-    cache[cle_cache] = {"date": datetime.now(timezone.utc).isoformat(), "donnees": donnees}
-    FICHIER_CACHE.parent.mkdir(parents=True, exist_ok=True)
-    FICHIER_CACHE.write_text(json.dumps(cache, ensure_ascii=False, indent=1), encoding="utf-8")
+    with _VERROU_CACHE:  # lire, ajouter, réécrire : les trois d'un seul tenant
+        cache = _lire_cache()
+        cache[cle_cache] = {"date": datetime.now(timezone.utc).isoformat(), "donnees": donnees}
+        FICHIER_CACHE.parent.mkdir(parents=True, exist_ok=True)
+        FICHIER_CACHE.write_text(json.dumps(cache, ensure_ascii=False, indent=1), encoding="utf-8")
 
 
-def avec_repli(cle_cache, appel_direct):
+def avec_repli(cle_cache, appel_direct, est_absence=None):
     """Renvoie (donnees, date_du_cache).
 
     cle_cache     texte qui identifie la requête, par exemple « tim:CDG:BKK »
     appel_direct  fonction sans argument qui interroge la source ; elle renvoie
                   les données utiles ou lève ErreurSource
+    est_absence   fonction qui dit si des données signifient « rien trouvé »
+                  (pas de trajet, pas de route, ville inconnue). Une absence n'est
+                  gardée que FRAICHEUR_ABSENCE_HEURES, et ne sert jamais de secours.
 
     Trois résultats possibles :
     - (donnees, None)        la source vient de répondre ;
@@ -100,14 +117,21 @@ def avec_repli(cle_cache, appel_direct):
     - (None, None)           ni source ni cache : à l'adaptateur d'utiliser le barème.
     """
     entree = _lire_cache().get(cle_cache)
+    absence_en_cache = bool(entree) and est_absence is not None and est_absence(entree["donnees"])
     if entree:
         age = datetime.now(timezone.utc) - datetime.fromisoformat(entree["date"])
-        if age < timedelta(days=FRAICHEUR_CACHE_JOURS):
+        if absence_en_cache:
+            fraicheur = timedelta(hours=FRAICHEUR_ABSENCE_HEURES)
+        else:
+            fraicheur = timedelta(days=FRAICHEUR_CACHE_JOURS)
+        if age < fraicheur:
             return entree["donnees"], entree["date"][:10]
     try:
         donnees = appel_direct()
     except ErreurSource:
-        if entree:  # cache ancien, mais mieux qu'une estimation
+        # Un cache ancien vaut mieux qu'une estimation... sauf si c'est une vieille
+        # absence : « pas de train » a pu devenir faux depuis.
+        if entree and not absence_en_cache:
             return entree["donnees"], entree["date"][:10]
         return None, None
     _ecrire_cache(cle_cache, donnees)
@@ -152,13 +176,16 @@ def estimer_duree_min(mode, distance_km):
 def estimer_duree_avion_min(distance_km):
     """Durée estimée d'un vol direct, temps d'aéroport compris.
 
-    durée = temps d'aéroport + part fixe du vol (roulage, montée, descente)
-            + distance ÷ vitesse de croisière
-    Les hypothèses sont détaillées dans bareme.json (« duree_avion »).
+    durée = trajet ville → aéroport + temps d'aéroport
+            + part fixe du vol (roulage, montée, descente) + distance ÷ vitesse de croisière
+            + trajet aéroport → ville
+    Le trajet vers et depuis l'aéroport rend l'avion comparable au train et au car,
+    comptés de centre à centre. Les hypothèses sont détaillées dans bareme.json
+    (« duree_avion »), toutes « à valider ».
     """
     avion = charger_bareme()["avion"]
     temps_de_vol = avion["temps_decollage_atterrissage_min"] + distance_km / avion["vitesse_km_h"] * 60
-    return avion["temps_aeroport_min"] + temps_de_vol
+    return 2 * avion["temps_acces_aeroport_min"] + avion["temps_aeroport_min"] + temps_de_vol
 
 
 def estimer_prix(mode, distance_km, chemin=FICHIER_BAREME_PRIX):

@@ -42,12 +42,21 @@ class TestBaremePrix(unittest.TestCase):
 
 class TestDureeAvion(unittest.TestCase):
     def test_formule(self):
-        # 150 min d'aéroport + 40 min de décollage et d'atterrissage + 880 km à 880 km/h (60 min).
-        self.assertAlmostEqual(commun.estimer_duree_avion_min(880), 250.0)
+        # 2 × 45 min de trajet ville-aéroport + 150 min d'aéroport
+        # + 40 min de décollage et d'atterrissage + 880 km à 880 km/h (60 min).
+        self.assertAlmostEqual(commun.estimer_duree_avion_min(880), 340.0)
 
     def test_paris_bangkok(self):
-        # Environ 11 h 24 de vol + 2 h 30 d'aéroport, soit près de 14 h.
-        self.assertAlmostEqual(commun.estimer_duree_avion_min(9450), 834.3, places=1)
+        # Environ 11 h 24 de vol + 2 h 30 d'aéroport + 1 h 30 de trajets, soit près de 15 h 30.
+        self.assertAlmostEqual(commun.estimer_duree_avion_min(9450), 924.3, places=1)
+
+    def test_le_trajet_vers_l_aeroport_est_en_configuration_et_a_valider(self):
+        bareme = json.loads(commun.FICHIER_BAREME.read_text(encoding="utf-8"))
+        self.assertEqual(bareme["statut"], "à valider")
+        acces = bareme["modes"]["avion"]["temps_acces_aeroport_min"]
+        # Compté deux fois : la durée change d'autant si on change la valeur du fichier.
+        sans_acces = commun.estimer_duree_avion_min(880) - 2 * acces
+        self.assertAlmostEqual(sans_acces, 250.0)
 
 
 if __name__ == "__main__":

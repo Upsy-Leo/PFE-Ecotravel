@@ -11,7 +11,7 @@ const MODES = {
   train: { nom: "Train", note: "De centre à centre" },
   bus: { nom: "Car", note: "Car longue distance, de centre à centre" },
   voiture: { nom: "Voiture", note: "Une personne à bord, voiture thermique" },
-  avion: { nom: "Avion", note: "Vol direct, temps d'aéroport compris, hors trajet vers l'aéroport" },
+  avion: { nom: "Avion", note: "De centre à centre : trajets vers et depuis l'aéroport et temps d'aéroport compris" },
 };
 
 // Pictogrammes décoratifs (le nom du mode est toujours écrit à côté).
@@ -32,6 +32,9 @@ const champs = {
 };
 const etat = document.getElementById("etat");
 const encartErreur = document.getElementById("erreur");
+// Zone du formulaire où l'on demande « quelle ville ? » quand un nom en désigne plusieurs.
+const zoneChoix = document.getElementById("choix-lieux");
+const ROLES = { depart: "de départ", arrivee: "d'arrivée" };
 
 // --- Petits outils ---
 
@@ -111,7 +114,123 @@ function verifierFormulaire() {
     montrerErreurChamp(nom, erreurs[nom]);
     if (erreurs[nom] && !premier) premier = champs[nom];
   }
+  // Si une question « quelle ville ? » est affichée, il faut y avoir répondu.
+  for (const groupe of zoneChoix.querySelectorAll("fieldset")) {
+    const manque = !groupe.querySelector("input:checked");
+    const message = groupe.querySelector(".message-erreur");
+    message.textContent = manque ? "Erreur : choisissez une ville dans la liste." : "";
+    message.hidden = !manque;
+    if (manque && !premier) premier = groupe.querySelector("input");
+  }
   return premier;
+}
+
+// --- Choix de la ville ---
+//
+// Deux façons de désigner une ville sans ambiguïté :
+// 1. la choisir dans le menu proposé pendant la frappe ;
+// 2. si on a tapé un nom porté par plusieurs villes, répondre à la question posée ensuite.
+// Dans les deux cas, le champ reçoit le nom complet (« Brest, Finistère, France ») et un
+// champ caché garde la position de la ville, envoyée au serveur avec la recherche.
+
+// Villes proposées pour chaque champ : nom complet -> lieu.
+const propositions = { depart: new Map(), arrivee: new Map() };
+const minuteries = {};
+const LETTRES_MINIMUM = 3; // même valeur que côté serveur
+const ATTENTE_MS = 350; // on attend une pause dans la frappe avant d'interroger le serveur
+
+function oublierPosition(nom) {
+  zoneChoix.querySelectorAll(`input[name="${nom}_point"]`).forEach((element) => element.remove());
+}
+
+// Garde la position de la ville choisie (« longitude,latitude ») dans un champ caché.
+function memoriserPosition(nom, position) {
+  oublierPosition(nom);
+  const cache = creer("input");
+  cache.type = "hidden";
+  cache.name = `${nom}_point`;
+  cache.value = position;
+  zoneChoix.append(cache);
+}
+
+function oublierQuestion(nom) {
+  zoneChoix.querySelectorAll(`fieldset[data-champ="${nom}"]`).forEach((element) => element.remove());
+}
+
+// Demande au serveur les villes qui commencent par le texte tapé, et remplit le menu.
+async function chargerPropositions(nom, texte) {
+  let lieux;
+  try {
+    lieux = (await (await fetch(`/lieux?texte=${encodeURIComponent(texte)}`)).json()).lieux;
+  } catch (erreur) {
+    return; // pas de propositions : on peut toujours taper le nom en entier
+  }
+  // Les réponses peuvent arriver dans le désordre : on ignore celle d'un texte déjà modifié.
+  if (champs[nom].value.trim() !== texte) return;
+  propositions[nom] = new Map(lieux.map((lieu) => [lieu.nom, lieu]));
+  const menu = document.getElementById(`propositions-${nom}`);
+  menu.replaceChildren(...lieux.map((lieu) => {
+    const ligne = creer("option");
+    ligne.value = lieu.nom; // ville, région, pays
+    return ligne;
+  }));
+}
+
+// À chaque modification d'un champ de ville (frappe, ou choix dans le menu).
+function surSaisie(nom) {
+  oublierQuestion(nom); // le nom a changé : l'ancienne question ne vaut plus
+  clearTimeout(minuteries[nom]);
+  const texte = champs[nom].value.trim();
+  const lieu = propositions[nom].get(texte);
+  if (lieu) {
+    memoriserPosition(nom, `${lieu.lon},${lieu.lat}`); // ville choisie dans le menu
+    return;
+  }
+  oublierPosition(nom);
+  if (texte.length >= LETTRES_MINIMUM) {
+    minuteries[nom] = setTimeout(() => chargerPropositions(nom, texte), ATTENTE_MS);
+  }
+}
+
+for (const nom of ["depart", "arrivee"]) {
+  champs[nom].addEventListener("input", () => surSaisie(nom));
+}
+
+// Pose la question : un groupe de boutons radio par champ ambigu.
+function afficherChoix(aPreciser) {
+  for (const [nom, lieux] of Object.entries(aPreciser)) {
+    oublierQuestion(nom);
+    const groupe = creer("fieldset", "choix");
+    groupe.dataset.champ = nom;
+    groupe.setAttribute("aria-describedby", `erreur-choix-${nom}`);
+    groupe.append(creer("legend", "", `Plusieurs villes s'appellent « ${champs[nom].value.trim()} ». Laquelle est votre ville ${ROLES[nom]} ?`));
+    lieux.forEach((lieu, rang) => {
+      const ligne = creer("div", "choix-ligne");
+      const bouton = creer("input");
+      bouton.type = "radio";
+      bouton.name = `choix-${nom}`;
+      bouton.id = `choix-${nom}-${rang}`;
+      // Rattaché à aucun formulaire : la réponse n'est pas envoyée telle quelle,
+      // c'est le nom complet et la position (ci-dessous) qui partent.
+      bouton.setAttribute("form", "aucun-formulaire");
+      bouton.addEventListener("change", () => {
+        champs[nom].value = lieu.nom; // le champ affiche la ville retenue
+        memoriserPosition(nom, `${lieu.lon},${lieu.lat}`);
+      });
+      const etiquette = creer("label", "", lieu.nom); // ville, région, pays
+      etiquette.htmlFor = bouton.id;
+      ligne.append(bouton, etiquette);
+      groupe.append(ligne);
+    });
+    const message = creer("p", "message-erreur");
+    message.id = `erreur-choix-${nom}`;
+    message.hidden = true;
+    groupe.append(message);
+    zoneChoix.append(groupe);
+  }
+  document.getElementById("resultats").hidden = true;
+  etat.textContent = "Plusieurs villes portent ce nom : précisez laquelle, puis relancez la comparaison.";
+  zoneChoix.querySelector("fieldset input").focus(); // amène le clavier sur la question
 }
 
 formulaire.addEventListener("submit", (evenement) => {
@@ -192,6 +311,12 @@ function construireOption(option, badges) {
   if (estEstimee(option.source.co2)) {
     texteCo2.append(creer("span", "precision", "Estimation de repli."));
   }
+  if (option.co2_indicatif) {
+    // Seconde estimation, par une autre méthode : affichée pour information seulement.
+    const autreMethode = option.co2_indicatif.source.split(",")[0];
+    texteCo2.append(creer("span", "precision",
+      `À titre indicatif : ${ecrireKg(option.co2_indicatif.co2_kg)} selon ${autreMethode}. Cette valeur ne sert ni au niveau ni au classement.`));
+  }
   co2.append(construireLettre(option.niveau), texteCo2);
   valeurs.append(construireValeur("CO₂ par personne", [co2]));
 
@@ -206,12 +331,20 @@ function construireOption(option, badges) {
   sources.append(titre);
   const liste = creer("dl");
   const lignes = [["Prix", option.source.prix], ["Durée", option.source.duree], ["CO₂", option.source.co2], ["Distance", option.source.distance]];
+  if (option.co2_indicatif) lignes.splice(3, 0, ["CO₂, valeur indicative", option.co2_indicatif.source]);
   for (const [nomValeur, source] of lignes) {
     liste.append(creer("dt", "", nomValeur), creer("dd", "", source || "Source non précisée"));
   }
   sources.append(liste);
 
-  carte.append(tete, valeurs, sources);
+  carte.append(tete);
+  // Mises en garde propres à cette option (par exemple : vol direct non vérifié).
+  for (const remarque of option.remarques || []) {
+    const bloc = creer("p", "remarque");
+    bloc.append(creer("strong", "", "À savoir : "), remarque);
+    carte.append(bloc);
+  }
+  carte.append(valeurs, sources);
   return carte;
 }
 
@@ -236,15 +369,22 @@ function afficherResultats(reponse) {
     .sort((a, b) => ordre.indexOf(a.mode) - ordre.indexOf(b.mode));
   const badges = calculerBadges(options);
 
-  const depart = reponse.depart.nom.split(",")[0];
-  const arrivee = reponse.arrivee.nom.split(",")[0];
+  const depart = reponse.depart.ville;
+  const arrivee = reponse.arrivee.ville;
   const titre = document.getElementById("titre-resultats");
   titre.textContent = `${depart} → ${arrivee}`;
   document.title = `${depart} → ${arrivee} · [NOM]`;
   const pluriel = options.length > 1 ? "s" : "";
   document.getElementById("resume").textContent =
-    `${ecrireDate(reponse.date)} · 1 personne · aller simple · ${options.length} option${pluriel}. ` +
-    `Lieux retenus : ${reponse.depart.nom} et ${reponse.arrivee.nom} (${reponse.depart.source}).`;
+    `${ecrireDate(reponse.date)} · 1 personne · aller simple · ${options.length} option${pluriel}`;
+
+  // Le lieu retenu s'affiche en toutes lettres (ville, région, pays) dans les champs du
+  // haut : c'est là qu'on le lit, et là qu'on le modifie. Sa position est gardée, pour
+  // qu'une nouvelle recherche (autre date, par exemple) reparte de la même ville.
+  for (const nom of ["depart", "arrivee"]) {
+    champs[nom].value = reponse[nom].nom;
+    memoriserPosition(nom, `${reponse[nom].lon},${reponse[nom].lat}`);
+  }
 
   const liste = document.getElementById("options");
   liste.replaceChildren(...options.map((option) => construireOption(option, badges[option.mode])));
@@ -305,18 +445,33 @@ async function comparer(parametres) {
   etat.textContent = "Comparaison en cours… La première recherche d'un trajet peut prendre quelques secondes.";
   const bouton = formulaire.querySelector("button");
   bouton.disabled = true;
+  // Étape 1 : interroger le serveur. Seule une panne de réseau arrive dans ce « catch ».
+  let reponse;
+  let donnees;
   try {
-    const reponse = await fetch(`/comparer?${parametres}`);
-    const donnees = await reponse.json();
+    reponse = await fetch(`/comparer?${parametres}`);
+    donnees = await reponse.json();
+  } catch (erreur) {
+    console.error("Appel de /comparer impossible :", erreur);
+    afficherErreur("Le serveur ne répond pas. Vérifiez qu'il est lancé (python -m backend.serveur), puis réessayez.");
+    bouton.disabled = false;
+    return;
+  }
+  bouton.disabled = false;
+
+  // Étape 2 : afficher. Une erreur ici vient de la page, pas du serveur : on le dit,
+  // et le détail part dans la console du navigateur (touche F12).
+  try {
     if (!reponse.ok) {
       afficherErreur(donnees.erreur || "La comparaison a échoué.");
-      return;
+    } else if (donnees.a_preciser) {
+      afficherChoix(donnees.a_preciser); // plusieurs villes du même nom : on demande
+    } else {
+      afficherResultats(donnees);
     }
-    afficherResultats(donnees);
   } catch (erreur) {
-    afficherErreur("Le serveur ne répond pas. Vérifiez qu'il est lancé (python -m backend.serveur), puis réessayez.");
-  } finally {
-    bouton.disabled = false;
+    console.error("Affichage de la réponse impossible :", erreur);
+    afficherErreur("La réponse du serveur n'a pas pu être affichée. Rechargez la page avec Ctrl+F5 ; si le problème persiste, le détail est dans la console du navigateur (F12).");
   }
 }
 
@@ -329,6 +484,9 @@ if (parametres.has("depart") || parametres.has("arrivee") || parametres.has("dat
   // On remet la recherche dans le formulaire, pour pouvoir la modifier.
   for (const nom of Object.keys(champs)) {
     champs[nom].value = parametres.get(nom) || "";
+  }
+  for (const nom of ["depart", "arrivee"]) {
+    if (parametres.get(`${nom}_point`)) memoriserPosition(nom, parametres.get(`${nom}_point`));
   }
   if (verifierFormulaire() === null) {
     afficherEchelle();

@@ -12,6 +12,7 @@ Les tests de la dernière classe vérifient que les vrais fichiers sont bien for
 import unittest
 
 from backend.moteur_co2 import (
+    charger_methode,
     calculer_co2,
     charger_facteurs,
     charger_niveaux,
@@ -174,6 +175,32 @@ class TestFichiersReels(unittest.TestCase):
                     self.assertLessEqual(co2_min, resultat.co2_kg)
                     self.assertLessEqual(resultat.co2_kg, co2_max)
                     self.assertIn(resultat.niveau, "ABCDE")
+
+
+class TestTraineesDeCondensation(unittest.TestCase):
+    """Le facteur ADEME de l'avion = carburant + traînées. Le réglage est dans methode.json."""
+
+    def test_reglage_actif_trainees_incluses(self):
+        self.assertTrue(charger_methode()["options_ademe"]["trainees_de_condensation"])
+        resultat = calculer_co2("avion", 500)
+        self.assertAlmostEqual(resultat.intensite_g_pkm, 224.2)
+        self.assertIn("traînées de condensation incluses", resultat.source)
+
+    def test_sans_les_trainees(self):
+        # Valeurs relevées sur l'API Impact CO2 le 2026-11-24 avec ignoreRadiativeForcing=1.
+        attendus = {500: 123.2, 1500: 101.3, 3000: 91.5, 9441: 97.6}
+        for distance, facteur in attendus.items():
+            with self.subTest(distance=distance):
+                resultat = calculer_co2("avion", distance, avec_trainees=False)
+                self.assertAlmostEqual(resultat.intensite_g_pkm, facteur)
+                self.assertAlmostEqual(resultat.co2_kg, distance * facteur / 1000)
+                self.assertIn("sans les traînées", resultat.source)
+                self.assertIsNone(resultat.incertitude_kg)  # la fourchette ne vaut qu'avec les traînées
+
+    def test_sans_effet_sur_les_autres_modes(self):
+        for mode in ("train", "bus", "voiture"):
+            with self.subTest(mode=mode):
+                self.assertEqual(calculer_co2(mode, 430, avec_trainees=False), calculer_co2(mode, 430, avec_trainees=True))
 
 
 if __name__ == "__main__":

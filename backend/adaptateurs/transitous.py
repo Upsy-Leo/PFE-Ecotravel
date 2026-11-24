@@ -83,7 +83,9 @@ def _option(mode, depart, arrivee, contact, date):
 
     # La date fait partie de la clé : les horaires changent d'un jour à l'autre.
     cle_cache = f"transitous:{mode}:{commun.cle_coordonnees(depart)}:{commun.cle_coordonnees(arrivee)}:{date}"
-    donnees, date_cache = commun.avec_repli(cle_cache, appel_direct)
+    donnees, date_cache = commun.avec_repli(
+        cle_cache, appel_direct, est_absence=lambda donnees: donnees["duree_min"] is None
+    )
 
     distance_km = commun.estimer_distance_km(mode, depart, arrivee)
     source_distance = "Barème (à valider) : vol d'oiseau × coefficient de détour"
